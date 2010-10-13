@@ -1,0 +1,6 @@
+?package.skeleton
+setwd("~/.strat")
+system("ls")
+setwd("~/.strat/strat")
+ls()
+package.skeleton(name = "strat")

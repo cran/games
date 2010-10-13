@@ -1,0 +1,103 @@
+\name{ultimatum}
+\alias{ultimatum}
+\title{Statistical ultimatum game}
+\usage{ultimatum(formulas, data, subset, na.action, maxOffer,
+    offertol=sqrt(.Machine$double.eps), s1, s2, outcome=c("both",
+    "offer"), boot=0, bootreport=TRUE, ..., reltol=1e-12)
+}
+\description{Estimates the statistical ultimatum game described in Ramsay and Signorino
+(2009), illustrated below in \dQuote{Details}.}
+\details{The model corresponds to the following extensive-form game, described in
+Ramsay and Signorino (2009):
+\preformatted{
+.       1
+.      / \
+.     /   \
+.    /     \ y in [0, Q]
+.   /       \
+.   ---------
+.       /\  2
+.      /  \
+.     /    \
+.    /      \
+. Q - y     R1
+. y         R2}
+Q refers to the maximum feasible offer (the argument \code{maxOffer}).
+
+The two equations on the right-hand side of \code{formulas} refer to Player
+1's and Player 2's reservation values respectively.  The left-hand side
+should take the form \code{offer + acceptance}, where \code{outcome}
+contains the numeric value of the offer made and \code{acceptance} is an
+indicator for whether it was accepted.  (If \code{outcome} is set to
+\dQuote{offer}, the acceptance indicator can be omitted.  See below for
+more.)
+
+The \code{outcome} argument refers to whether the outcome of interest is
+just the level of the offer made, or both the level of the offer and whether
+it was accepted.  If acceptance was unobserved, then \code{outcome} should
+be set to \dQuote{offer}.  If so, the estimates for Player 2's reservation
+value should be interpreted as Player 1's expectations about these
+parameters.  It may also be useful to set \code{outcome} to \dQuote{offer}
+even if acceptance data are available, for the purpose of comparing the
+strategic model to other models of offer levels (as in Ramsay and Signorino
+2009).  If an acceptance variable is specified but \code{outcome} is set to
+\dQuote{offer}, the acceptance data will be used for starting values but not
+in the actual fitting.
+
+Numerical instability is not uncommon in the statistical ultimatum game,
+especially when the scale parameters are being estimated.}
+\value{An object of class \code{c("game", "ultimatum")}.  For details on
+the \code{game} class, see \code{\link{egame12}}.  The \code{ultimatum}
+class is just for use in the generation of predicted values (see
+\code{\link{predProbs}}).}
+\references{Kristopher W. Ramsay and Curtis S. Signorino.  2009.  \dQuote{A
+Statistical Model of the Ultimatum Game.}  Available online at
+\url{http://www.rochester.edu/college/psc/signorino/research/RamsaySignorino_Ultimatum.pdf}.}
+\author{Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and Curtis
+S. Signorino}
+\arguments{\item{formulas}{a list of two formulas, or a \code{\link{Formula}} object
+with two right-hand sides.  See \dQuote{Details} and the examples below.}
+\item{data}{data frame containing the variables in the model.}
+\item{subset}{optional logical expression specifying which observations from
+\code{data} to use in fitting.}
+\item{na.action}{how to deal with \code{NA}s in \code{data}.  Defaults to
+the \code{na.action} setting of \code{\link{options}}.  See
+\code{\link{na.omit}}.}
+\item{maxOffer}{numeric: the highest offer Player 1 could feasibly make.}
+\item{offertol}{numeric: offers within \code{offertol} of \code{maxOffer}
+will be considered to be at the maximum.  If \code{maxOffer} and all
+observed offers are integer-valued, the value of \code{offertol} should not
+matter.}
+\item{s1}{numeric: scale parameter for Player 1.  If \code{NULL} (the
+default), the parameter will be estimated.}
+\item{s2}{numeric: scale parameter for Player 2.  If \code{NULL} (the
+default), the parameter will be estimated.}
+\item{outcome}{the outcome of interest: just Player 1's offer
+(\dQuote{offer}) or both the offer and its acceptance (\dQuote{both}).  See
+\dQuote{Details}.}
+\item{boot}{integer: number of bootstrap iterations to perform (if any).}
+\item{bootreport}{logical: whether to print status bar when performing
+bootstrap iterations.}
+\item{...}{other arguments to pass to the fitting function (see
+\code{\link{maxBFGS}}).}
+\item{reltol}{numeric: relative convergence tolerance level (see
+\code{\link{optim}}).  Use of values higher than the default is discouraged.}
+}
+\examples{data(data_ult)
+
+## the formula:
+f1 <- offer + accept ~ x1 + x2 + x3 + x4 + w1 + w2 | z1 + z2 + z3 + z4 + w1 + w2
+##                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+##                                  R1                              R2
+
+m1 <- ultimatum(f1, data = data_ult, maxOffer = 15)
+summary(m1)
+
+## estimating offer size only
+f2 <- update(Formula(f1), offer ~ .)
+m2 <- ultimatum(f2, data = data_ult, maxOffer = 15, outcome = "offer")
+
+## fixing scale terms
+m3 <- ultimatum(f1, data = data_ult, maxOffer = 15, s1 = 5, s2 = 1)
+summary(m3)}
+
