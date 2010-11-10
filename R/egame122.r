@@ -1,4 +1,5 @@
 ##' @include games.r
+##' @include helpers.r
 NULL
 
 predict.egame122 <- function(object, newdata, probs = c("outcome", "action"), ...)
@@ -73,25 +74,6 @@ sbi122 <- function(y, regr, link)
     return(ans)
 }
 
-makeUtils122 <- function(b, regr)
-{
-    utils <- vector("list", 6)
-    names(utils) <- c("u11", "u12", "u13", "u14", "u22", "u24")
-
-    rcols <- sapply(regr, ncol)
-    for (i in 1:6) {
-        if (rcols[i] > 0) {
-            utils[[i]] <- as.numeric(regr[[i]] %*% b[1:rcols[i]])
-            b <- b[-(1:rcols[i])]
-        } else {
-            utils[[i]] <- rep(0, nrow(regr[[i]]))
-        }
-    }
-
-    utils$b <- b
-    return(utils)
-}
-
 makeSDs122 <- function(b, regr, type)
 {
     sds <- vector("list", 6)
@@ -119,7 +101,8 @@ makeProbs122 <- function(b, regr, link, type)
 {
     private <- type == "private"
 
-    utils <- makeUtils122(b, regr)
+    utils <- makeUtils(b, regr, nutils = 6,
+                       unames = c("u11", "u12", "u13", "u14", "u22", "u24"))
 
     if (length(utils$b) == 0) {
         sds <- as.list(rep(1, 6))
@@ -170,7 +153,8 @@ logLik122 <- function(b, y, regr, link, type, ...)
 
 logLikGrad122 <- function(b, y, regr, link, type, ...)
 {
-    u <- makeUtils122(b, regr)
+    u <- makeUtils(b, regr, nutils = 6,
+                   unames = c("u11", "u12", "u13", "u14", "u22", "u24"))
     p <- makeProbs122(b, regr, link, type)
     rcols <- sapply(regr, ncol)
     n <- nrow(regr$X1)

@@ -7,87 +7,6 @@
 ##' in Discrete Choice Models.}  \emph{Political Analysis} 11:316--344.
 NULL
 
-##' Dataset of militarized international disputes between 1816 and 1899.
-##'
-##' The dataset is taken from the Correlates of War project.  The unit of
-##' observation is the dyad-year, and the variables are: \describe{
-##' \item{\code{ccode1}}{Initiator's COW country code}
-##' \item{\code{ccode2}}{Respondent's COW country code}
-##' \item{\code{year}}{Year of dispute}
-##' \item{\code{cap_1}}{Initiator's military capabilities (as percent of total
-##' system capabilities)}
-##' \item{\code{cap_2}}{Respondent's military capabilities (as percent of total
-##' system capabilities)}
-##' \item{\code{balanc}}{Balance of dyadic capabilities possessed by the
-##' initiator (i.e., \code{cap_1 / (cap_1 + cap_2)})}
-##' \item{\code{s_wt_re1}}{Dyadic S-score (see Signorino and Ritter 1998),
-##' weighted by initiator's region}
-##' \item{\code{s_wt_re2}}{Dyadic S-score, weighted by respondent's region}
-##' \item{\code{dem1}}{Initiator's Polity score}
-##' \item{\code{dem2}}{Respondent's Polity score}
-##' \item{\code{distance}}{Distance (in miles) between initiator and respondent}
-##' \item{\code{peaceyrs}}{Years since last dispute in this dyad}
-##' \item{\code{midnum}}{Dispute's number in the MID data set}
-##' \item{\code{revis1}}{Whether the initiator had \dQuote{revisionist} aims}
-##' \item{\code{revis2}}{Whether the respondent had \dQuote{revisionist} aims}
-##' \item{\code{sq}}{Indicator for status quo outcome}
-##' \item{\code{capit}}{Indicator for capitulation outcome}
-##' \item{\code{war}}{Indicator for war outcome}
-##' \item{\code{esc}}{Indicator for escalation (i.e., either capitulation or war
-##' occurs)}
-##' \item{\code{regime1}}{Initiator's regime type (calculated from \code{dem1})}
-##' \item{\code{regime2}}{Respondent's regime type (calculated from \code{dem2})}
-##' }
-##' @name war1800
-##' @usage data(war1800)
-##' @title 19th-century international disputes
-##' @docType data
-##' @references Daniel M. Jones, Stuart A. Bremer and J. David Singer.  1996.
-##' \dQuote{Militarized Interstate Disputes, 1816-1992: Rationale, Coding Rules,
-##' and Empirical Patterns.} \emph{Conflict Management and Peace Science}
-##' 15(2): 163--213.
-##' @seealso \code{\link{egame12}}
-##' @keywords data
-NULL
-
-##' Simulated data for illustrating \code{\link{egame122}}.
-##'
-##' The variables are: \describe{
-##' \item{\code{f1}, \code{f2}}{Factors with levels \dQuote{a}, \dQuote{b},
-##' \dQuote{c}}
-##' \item{\code{x1}--\code{x5}}{Numeric variables entering Player 1's utilities}
-##' \item{\code{z1}--\code{z3}}{Numeric variables entering Player 2's utilities}
-##' \item{\code{a1}}{Indicator for Player 1's move (L or R)}
-##' \item{\code{a2}}{Indicator for Player 2's move (L or R)}
-##' \item{\code{y}}{Factor containing outcome}
-##' }
-##' @name data_122
-##' @usage data(data_122)
-##' @title Simulated egame122 data
-##' @docType data
-##' @seealso \code{\link{egame122}}
-##' @keywords data
-NULL
-
-##' Simulated data for illustrating \code{\link{ultimatum}}.
-##'
-##' The variables are: \describe{
-##' \item{\code{offer}}{The offer made by Player 1}
-##' \item{\code{accept}}{Whether Player 2 accepted the offer (0 for rejection, 1
-##' for acceptance)}
-##' \item{\code{w1}, \code{w2}}{Variables entering both players' reservation values}
-##' \item{\code{x1}--\code{x4}}{Variables entering Player 1's reservation value}
-##' \item{\code{z1}--\code{z4}}{Variables entering Player 2's reservation value}
-##' }
-##' The maximum offer size is 15.
-##' @name data_ult
-##' @usage data(data_ult)
-##' @title Simulated ultimatum data
-##' @docType data
-##' @seealso \code{\link{ultimatum}}
-##' @keywords data
-NULL
-
 ##' The default method for printing a \code{game} object.
 ##'
 ##' Prints the call and coefficients of a fitted strategic model.
@@ -437,81 +356,6 @@ latexTable <- function(x, digits = max(3, getOption("digits") - 2), scientific =
 }
 
 ##
-## Ensures that estimated probabilities aren't numerically equal to 1 or 0, in
-## order to ensure no -Infs or 0s in log-likelihoods.
-##
-finiteProbs <- function(x)
-{
-    x <- replace(x, x < .Machine$double.eps, .Machine$double.eps)
-    x <- replace(x, x > 1 - .Machine$double.neg.eps,
-                 1 - .Machine$double.neg.eps)
-    return(x)
-}
-
-finitize <- function(x)
-{
-    x <- ifelse(is.finite(x), x, sign(x) * .Machine$double.xmax)
-    return(x)
-}
-
-##
-## Used to ensure that the "formulas" argument of each fitting function contains
-## a valid type of object and coerces it to "Formula" class.  Returns an error
-## if the function isn't a formula, Formula, or list of formulas.
-##
-checkFormulas <- function(f, argname = "formulas")
-{
-    if (inherits(f, "list")) {
-        f <- do.call(as.Formula, f)
-    } else if (inherits(f, "formula")) {
-        f <- as.Formula(f)
-    } else {
-        stop(argname, " must be a list of formulas or a formula")
-    }
-
-    return(f)
-}
-
-##
-## Takes a list of vectors and finds their intersection
-##
-intersectAll <- function(...)
-{
-    x <- list(...)
-    ans <- x[[1]]
-    for (i in 1:length(x)) ans <- intersect(ans, x[[i]])
-
-    return(ans)
-}
-
-##
-## Makes the names of the variables for egame12 and egame122 models.
-## 
-makeVarNames <- function(varNames, prefixes, link, sdterms)
-{
-    vname <- if (link == "logit") "log(lambda" else "log(sigma"
-    if (sdterms == 1) {
-        prefixes <- c(prefixes, paste(vname, ")", sep = ""))
-    } else if (sdterms == 2) {
-        prefixes <- c(prefixes, paste(vname, 1:2, ")", sep = ""))
-    }
-
-    hasColon <- sapply(varNames, function(x) length(x) > 0 &&
-                       !all(x == "(Intercept)"))
-    names(hasColon) <- prefixes
-    for (i in seq_along(varNames)) {
-        if (hasColon[i]) {
-            varNames[[i]] <- paste(prefixes[i], varNames[[i]], sep = ":")
-        } else {
-            varNames[[i]] <- prefixes[i][length(varNames[[i]])]
-        }
-    }
-    varNames <- unlist(varNames)
-    ans <- list(varNames = varNames, hasColon = hasColon)
-    return(ans)
-}
-
-##
 ## Takes an equation prefix from a strategic model (e.g., "u1(war)") and
 ## translates it into plain English (e.g., "Player 1's utility for war").
 ##
@@ -541,62 +385,6 @@ prefixToString <- function(x)
     }
 
     return(x)
-}
-
-##
-## Calculates the variance-covariance matrix for a fitted model, including a
-## procedure for catching the error (and returning a matrix of NAs) in case the
-## Hessian is non-invertible.
-##
-getGameVcov <- function(hessian, fixed)
-{
-    hes <- hessian[!fixed, !fixed, drop = FALSE]
-    vv <- tryCatch(solve(-hes), error = function(e) e)
-    if (inherits(vv, "error")) {
-        warning("variance-covariance matrix could not be calculated: ",
-                vv$message)
-        vv <- matrix(NA, nrow(hes), nrow(hes))
-    }
-    ans <- hessian
-    ans[] <- NA
-    ans[!fixed, !fixed] <- vv
-    return(ans)
-}
-
-##
-## Calculates bootstrap results for a strategic model.
-## 
-gameBoot <- function(boot, report = TRUE, estimate, y, a = NULL, regr, fn, gr,
-                      fixed, ...)
-{
-    bootMatrix <- matrix(NA, nrow = boot, ncol = length(estimate))
-    failedBoot <- logical(boot)
-    if (report) {
-        cat("\nRunning bootstrap iterations...\n")
-        pb <- txtProgressBar(min = 1, max = boot)
-    }
-    for (i in seq_len(boot)) {
-        bootSamp <- sample(seq_len(length(y)), replace = TRUE)
-        newy <- y[bootSamp]
-        newa <- a[bootSamp]  ## for the ultimatum model
-        newregr <- lapply(regr, function(x) x[bootSamp, , drop = FALSE])
-        bootResults <- maxBFGS(fn = fn, grad = gr, start = estimate, fixed =
-                               fixed, y = newy, acc = newa, regr = newregr, ...)
-        if (bootResults$code) {
-            warning("bootstrap iteration ", i,
-                    "failed to converge and will be removed")
-            failedBoot[i] <- TRUE
-        }
-        bootMatrix[i, ] <- bootResults$estimate
-
-        if (report)
-            setTxtProgressBar(pb, i)
-    }
-    if (report)
-        cat("\n")
-    bootMatrix <- bootMatrix[!failedBoot, , drop = FALSE]
-    colnames(bootMatrix) <- names(estimate)
-    return(bootMatrix)
 }
 
 ##' Finds the modal value of a vector of any class.
@@ -920,12 +708,9 @@ predProbs <- function(model, x, xlim = c(min(x), max(x)), n = 100, ci = .95,
         lowcols <- highcols <- numeric(0)
     }
     xcol <- max(probcols, lowcols, highcols) + xc
-    ans <- cbind(ans, profData)
-    attr(ans, "probcols") <- probcols
-    attr(ans, "lowcols") <- lowcols
-    attr(ans, "highcols") <- highcols
-    attr(ans, "xcol") <- xcol
-    class(ans) <- c("predProbs", "data.frame")
+    ans <- structure(cbind(ans, profData), probcols = probcols, lowcols =
+                     lowcols, highcols = highcols, xcol = xcol, class =
+                     c("predProbs", "data.frame"))
 
     if (makePlots)
         plot(ans)
