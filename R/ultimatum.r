@@ -226,6 +226,9 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 ##' @param boot integer: number of bootstrap iterations to perform (if any).
 ##' @param bootreport logical: whether to print status bar when performing
 ##' bootstrap iterations.
+##' @param profile output from running \code{\link{profile.game}} on a previous
+##' fit of the model, used to generate starting values for refitting when an
+##' earlier fit converged to a non-global maximum.
 ##' @param ... other arguments to pass to the fitting function (see
 ##' \code{\link{maxBFGS}}).
 ##' @param reltol numeric: relative convergence tolerance level (see
@@ -264,6 +267,7 @@ ultimatum <- function(formulas, data, subset, na.action,
                       outcome = c("both", "offer"),
                       boot = 0,
                       bootreport = TRUE,
+                      profile,
                       ...,
                       reltol = 1e-12)
 {
@@ -296,6 +300,7 @@ ultimatum <- function(formulas, data, subset, na.action,
                  " `outcome == \"both\"`; see `?ultimatum`")
         }
         y <- ya
+        a <- NULL
     }
     if (any(y > maxOffer))
         stop("observed offers greater than maxOffer")
@@ -309,18 +314,25 @@ ultimatum <- function(formulas, data, subset, na.action,
 
     ## suppressing warnings in the logit fitting because fitted probabilities
     ## numerically equal to 0/1 seem to occur often
-    aa <- if (exists("a")) a else as.numeric(y >= mean(y))
-    m2 <- suppressWarnings(glm.fit(regr$Z, aa, family = binomial(link = "logit"),
-                                   intercept = FALSE, offset = as.numeric(-y)))
-    m1 <- lsfit(regr$X, maxOffer - y, intercept = FALSE)
-    sval <- c(m1$coefficients, m2$coefficients, s1, s2)
+    if (missing(profile) || is.null(profile)) {
+        aa <- if (!is.null(a)) a else as.numeric(y >= mean(y))
+        m2 <- suppressWarnings(glm.fit(regr$Z, aa,
+                                       family = binomial(link = "logit"),
+                                       intercept = FALSE, offset =
+                                       as.numeric(-y)))
+        m1 <- lsfit(regr$X, maxOffer - y, intercept = FALSE)
+        sval <- c(m1$coefficients, m2$coefficients, s1, s2)
 
-    firstTry <- logLikUlt(sval, y = y, acc = a, regr = regr, maxOffer =
-                          maxOffer, offerOnly = offerOnly, offertol = offertol)
-    if (!is.finite(sum(firstTry))) {
-        sval <- c(maxOffer - mean(y), rep(0, length(m1$coefficients) - 1),
-                  maxOffer - mean(y), rep(0, length(m2$coefficients) - 1),
-                  s1, s2)
+        firstTry <- logLikUlt(sval, y = y, acc = a, regr = regr, maxOffer =
+                              maxOffer, offerOnly = offerOnly, offertol =
+                              offertol)
+        if (!is.finite(sum(firstTry))) {
+            sval <- c(maxOffer - mean(y), rep(0, length(m1$coefficients) - 1),
+                      maxOffer - mean(y), rep(0, length(m2$coefficients) - 1),
+                      s1, s2)
+        }
+    } else {
+        sval <- svalsFromProfile(profile)
     }
 
     names(sval) <- c(paste("R1", colnames(regr$X), sep = ":"),
@@ -343,10 +355,10 @@ ultimatum <- function(formulas, data, subset, na.action,
 
     if (boot > 0) {
         bootMatrix <- gameBoot(boot, report = bootreport, estimate =
-                                results$estimate, y = y, a = a, regr = regr, fn
-                                = logLikUlt, gr = logLikGradUlt , fixed = fvec,
-                                maxOffer = maxOffer, offerOnly = offerOnly,
-                                offertol = offertol, reltol = reltol, ...)
+                               results$estimate, y = y, a = a, regr = regr, fn
+                               = logLikUlt, gr = logLikGradUlt , fixed = fvec,
+                               maxOffer = maxOffer, offerOnly = offerOnly,
+                               offertol = offertol, reltol = reltol, ...)
     }
 
     ans <- list()
@@ -356,7 +368,8 @@ ultimatum <- function(formulas, data, subset, na.action,
         logLikUlt(results$estimate, y = y, acc = a, regr = regr, maxOffer =
                   maxOffer, offertol = offertol, offerOnly = offerOnly)
     ans$call <- cl
-    ans$convergence <- list(code = results$code, message = results$message)
+    ans$convergence <- list(code = results$code, message = results$message,
+                            gradient = TRUE)
     ans$formulas <- formulas
     ans$link <- "logit"
     ans$type <- "private"
@@ -368,7 +381,10 @@ ultimatum <- function(formulas, data, subset, na.action,
     ans$fixed <- fvec
     if (boot > 0)
         ans$boot.matrix <- bootMatrix
+    ans$outcome <- outcome
     ans$maxOffer <- maxOffer
+    ans$offertol <- offertol
+    ans$acc <- a
 
     class(ans) <- c("game", "ultimatum")
 

@@ -1,0 +1,21 @@
+\name{plot.profile.game}
+\alias{plot.profile.game}
+\title{Plot profiles of strategic model log-likelihoods}
+\usage{\method{plot}{profile.game}(x, show.pts=FALSE, ...)
+}
+\description{Plot output of \code{\link{profile.game}}.}
+\details{This method provides plots for a quick assessment of whether \code{game}
+models have failed to converge to a global maximum.  For each parameter
+profiled (see \code{\link{profile.game}} for details of the profiling
+process), a spline interpolation of the log-likelihood profile is provided,
+with an "x" marking the value at the original parameter estimate.}
+\value{\code{x}, invisibly}
+\seealso{\code{\link{profile.game}}}
+\author{Brenton Kenkel}
+\arguments{\item{x}{an object of class \code{profile.game}, typically created by
+running \code{\link{profile.game}} on a fitted \code{game} model}
+\item{show.pts}{logical: plot a point for the log-likelihood of each
+profiled model?}
+\item{...}{other arguments, currently ignored}
+}
+

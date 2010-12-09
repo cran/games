@@ -4,7 +4,7 @@
 \usage{egame12(formulas, data, subset, na.action, link=c("probit", "logit"),
     type=c("agent", "private"), startvals=c("sbi", "unif", "zero"),
     fixedUtils, sdformula, sdByPlayer=FALSE, boot=0, bootreport=TRUE,
-    ...)
+    profile, ...)
 }
 \description{Fits a strategic model with three terminal nodes, as in the game illustrated
 below in \dQuote{Details}.}
@@ -91,7 +91,8 @@ contain \code{NA}s.}
 unsummed for use with non-nested model tests).}
 \item{\code{call}}{the call used to produce the model.}
 \item{\code{convergence}}{a list containing the convergence code and message
-returned by \code{\link{maxBFGS}}.}
+returned by \code{\link{maxBFGS}}, and an indicator for whether the
+gradient was used in fitting.}
 \item{\code{formulas}}{the final \code{Formula} object passed to
 \code{model.frame} (including anything specified for the scale parameters).}
 \item{\code{link}}{the specified link function.}
@@ -148,6 +149,9 @@ one be estimated for each player?  This option is ignored unless
 \item{boot}{integer: number of bootstrap iterations to perform (if any).}
 \item{bootreport}{logical: whether to print status bar when performing
 bootstrap iterations.}
+\item{profile}{output from running \code{\link{profile.game}} on a previous
+fit of the model, used to generate starting values for refitting when an
+earlier fit converged to a non-global maximum.}
 \item{...}{other arguments to pass to the fitting function (see
 \code{\link{maxBFGS}}).}
 }

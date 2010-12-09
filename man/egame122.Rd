@@ -4,7 +4,7 @@
 \usage{egame122(formulas, data, subset, na.action, link=c("probit", "logit"),
     type=c("agent", "private"), startvals=c("sbi", "unif", "zero"),
     fixedUtils, sdformula, sdByPlayer=FALSE, boot=0, bootreport=TRUE,
-    ...)
+    profile, ...)
 }
 \description{Fits a strategic model with four terminal nodes, as in the game illustrated
 below in \dQuote{Details}.}
@@ -54,6 +54,9 @@ containing a regression equation for the scale parameter.  See
 one be estimated for each player?}
 \item{boot}{integer: number of bootstrap iterations to perform (if any).}
 \item{bootreport}{logical: whether to print status bar during bootstrapping.}
+\item{profile}{output from running \code{\link{profile.game}} on a previous
+fit of the model, used to generate starting values for refitting when an
+earlier fit converged to a non-global maximum.}
 \item{...}{other arguments to pass to the fitting function (see
 \code{\link{maxBFGS}})}
 }

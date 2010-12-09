@@ -3,7 +3,7 @@
 \title{Statistical ultimatum game}
 \usage{ultimatum(formulas, data, subset, na.action, maxOffer,
     offertol=sqrt(.Machine$double.eps), s1, s2, outcome=c("both",
-    "offer"), boot=0, bootreport=TRUE, ..., reltol=1e-12)
+    "offer"), boot=0, bootreport=TRUE, profile, ..., reltol=1e-12)
 }
 \description{Estimates the statistical ultimatum game described in Ramsay and Signorino
 (2009), illustrated below in \dQuote{Details}.}
@@ -78,6 +78,9 @@ default), the parameter will be estimated.}
 \item{boot}{integer: number of bootstrap iterations to perform (if any).}
 \item{bootreport}{logical: whether to print status bar when performing
 bootstrap iterations.}
+\item{profile}{output from running \code{\link{profile.game}} on a previous
+fit of the model, used to generate starting values for refitting when an
+earlier fit converged to a non-global maximum.}
 \item{...}{other arguments to pass to the fitting function (see
 \code{\link{maxBFGS}}).}
 \item{reltol}{numeric: relative convergence tolerance level (see

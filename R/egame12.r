@@ -48,6 +48,9 @@ predict.egame12 <- function(object, newdata, probs = c("outcome", "action"), ...
 
 sbi12 <- function(y, regr, link)
 {
+    names(regr) <- character(length(regr))
+    names(regr)[1:4] <- c("X1", "X3", "X4", "Z")
+    
     ## have to do this because binomial() issues warning if it's not directly
     ## passed a character string to its link argument
     if (link == "probit") {
@@ -138,6 +141,8 @@ actionsToOutcomes12 <- function(probs, log.p = TRUE)
 
 logLik12 <- function(b, y, regr, link, type, ...)
 {
+    names(regr) <- character(length(regr))
+    names(regr)[1:4] <- c("X1", "X3", "X4", "Z")
     probs <- makeProbs12(b, regr, link, type)
     logProbs <- actionsToOutcomes12(probs, log.p = TRUE)
     ans <- logProbs[cbind(1:nrow(logProbs), y)]
@@ -146,6 +151,8 @@ logLik12 <- function(b, y, regr, link, type, ...)
 
 logLikGrad12 <- function(b, y, regr, link, type, ...)
 {
+    names(regr) <- character(length(regr))
+    names(regr)[1:4] <- c("X1", "X3", "X4", "Z")
     u <- makeUtils(b, regr, nutils = 4,
                    unames = c("u11", "u13", "u14", "u24"))
     p <- makeProbs12(b, regr, link, type)
@@ -330,6 +337,9 @@ makeResponse12 <- function(yf)
 ##' @param boot integer: number of bootstrap iterations to perform (if any).
 ##' @param bootreport logical: whether to print status bar when performing
 ##' bootstrap iterations.
+##' @param profile output from running \code{\link{profile.game}} on a previous
+##' fit of the model, used to generate starting values for refitting when an
+##' earlier fit converged to a non-global maximum.
 ##' @param ... other arguments to pass to the fitting function (see
 ##' \code{\link{maxBFGS}}).
 ##' @return An object of class \code{c("game", "egame12")}. A
@@ -342,7 +352,8 @@ makeResponse12 <- function(yf)
 ##' unsummed for use with non-nested model tests).}
 ##' \item{\code{call}}{the call used to produce the model.}
 ##' \item{\code{convergence}}{a list containing the convergence code and message
-##' returned by \code{\link{maxBFGS}}.}
+##' returned by \code{\link{maxBFGS}}, and an indicator for whether the
+##' gradient was used in fitting.}
 ##' \item{\code{formulas}}{the final \code{Formula} object passed to
 ##' \code{model.frame} (including anything specified for the scale parameters).}
 ##' \item{\code{link}}{the specified link function.}
@@ -421,6 +432,7 @@ egame12 <- function(formulas, data, subset, na.action,
                     sdByPlayer = FALSE,
                     boot = 0,
                     bootreport = TRUE,
+                    profile,
                     ...)
 {
     cl <- match.call()
@@ -487,21 +499,23 @@ egame12 <- function(formulas, data, subset, na.action,
     regr <- list()
     for (i in seq_len(length(formulas)[2]))
         regr[[i]] <- model.matrix(formulas, data = mf, rhs = i)
-    names(regr) <- character(length(regr))
-    names(regr)[1:4] <- c("X1", "X3", "X4", "Z")
     rcols <- sapply(regr, ncol)
 
     ## makes starting values -- specify "unif" (a numeric vector of length two)
     ## to control the interval from which uniform values are drawn
-    if (startvals == "zero") {
-        sval <- rep(0, sum(rcols))
-    } else if (startvals == "unif") {
-        if (!hasArg(unif))
-            unif <- c(-1, 1)
-        sval <- runif(sum(rcols), unif[1], unif[2])
+    if (missing(profile) || is.null(profile)) {
+        if (startvals == "zero") {
+            sval <- rep(0, sum(rcols))
+        } else if (startvals == "unif") {
+            if (!hasArg(unif))
+                unif <- c(-1, 1)
+            sval <- runif(sum(rcols), unif[1], unif[2])
+        } else {
+            sval <- sbi12(y, regr, link)
+            sval <- c(sval, rep(0, sum(rcols) - length(sval)))
+        }
     } else {
-        sval <- sbi12(y, regr, link)
-        sval <- c(sval, rep(0, sum(rcols) - length(sval)))
+        sval <- svalsFromProfile(profile)
     }
 
     ## identification check
@@ -552,7 +566,8 @@ egame12 <- function(formulas, data, subset, na.action,
     ans$log.likelihood <- logLik12(results$estimate, y = y, regr = regr, link =
                                    link, type = type)
     ans$call <- cl
-    ans$convergence <- list(code = results$code, message = results$message)
+    ans$convergence <- list(code = results$code, message = results$message,
+                            gradient = !is.null(gr))
     ans$formulas <- formulas
     ans$link <- link
     ans$type <- type
