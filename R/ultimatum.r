@@ -2,33 +2,84 @@
 ##' @include helpers.r
 NULL
 
-predict.ultimatum <- function(object, newdata, ...)
+##' Solves for W in the equation \eqn{W e^W = x}{W * exp(W) = x}.
+##'
+##' The function is based on the code given in Barry et al. (1995).  It is used
+##' to calculate fitted values for the \code{\link{ultimatum}} model.
+##'
+##' If negative values of \code{x} are supplied, \code{NaN}s will likely be
+##' returned.
+##' @title Lambert's W
+##' @param x vector of values to solve for.
+##' @return Solutions to Lambert's W for each value in \code{x}.
+##' @export
+##' @references D.A. Barry, P.J. Culligan-Hensley, and S.J. Barry.  1995.  "Real
+##' Values of the W-Function."  \emph{ACM Transactions on Mathematical Software}
+##' 21(2):161--171.
+##' @author Curt Signorino (\email{curt.signorino@@rochester.edu})
+##' @examples
+##' x <- rexp(10)
+##' w <- LW(x)
+##' all.equal(x, w * exp(w))
+LW <- function(x)
 {
-    if (missing(newdata))
-        newdata <- object$model
+    ## Note: there is a Lambert's W package, but it depends on the gsl (GNU
+    ## Scientific Library) package, which is hellish for Windows users to
+    ## install, hence our hand-rolled Lambert's W.
+    
+    eW <- function(x, W)
+    {
+        zn <- log(x/W)-W
+        first <- zn/(1+W)
+        common <- 2*(1+W)*(1+W+2*zn/3)
+        first*(common-zn)/(common-2*zn)
+    }
+    
+    lx <- log(x)
+    wlt <- (x*(1+4/3*x))/(1+x*(7/3+5/6*x))
+    wgt <- lx-(24*(lx*(lx+2)-3))/(lx*(7*lx+58)+127)
+    W1 <- ifelse(x < 0.7385, wlt, wgt)
+    
+    xge20 <- x >= 20
+    i <- seq_along(x)
+    ixge20 <- i[xge20]
+    a1 <- 1.124491989777808
+    b1 <- .4225028202459761
+    xg <- x[ixge20]
+    h <- exp(-a1/(b1+log(xg)))
+    Wp2 <- log(xg/log(xg/(log(xg))^h))  # for x>20
+    W1[ixge20] <- Wp2;                   
 
-    mf <- match(c("subset", "na.action"), names(object$call), 0L)
-    mf <- object$call[c(1L, mf)]
-    mf$formula <- object$formulas
-    mf$data <- newdata
-    mf$drop.unused.levels <- TRUE
-    mf[[1]] <- as.name("model.frame")
-    mf <- eval(mf, parent.frame())
+    ## iteration for improved accuracy
+    W2 <- W1*(1+eW(x,W1))
+    W3 <- W2*(1+eW(x,W2))
+    W4 <- W3*(1+eW(x,W3))               # enough
 
-    ## This is to prevent goofy things from happening with factor variables --
-    ## it ensures that the levels of factor variables in "newdata" are the same
-    ## as those in the model frame used in the original fitting
-    for (i in 1:ncol(mf)) {
-        if (is.factor(mf[, i])) {
-            iname <- names(mf)[i]
-            if (iname %in% names(object$model))
-                levels(mf[, i]) <- levels(object$model[, iname])
-        }
+    return(W4)
+}
+
+predict.ultimatum <- function(object, newdata, na.action = na.pass, ...)
+{
+    if (missing(newdata)) {
+        mf <- object$model
+    } else {
+        ## get rid of left-hand variables in the formula, since they're not
+        ## needed for fitting
+        formulas <- Formula(delete.response(terms(formula(object$formulas))))
+
+        mf <- model.frame(formulas, data = newdata, na.action = na.action,
+                          xlev = object$xlevels)
+
+        ## check that variables are of the right classes
+        Terms <- attr(object$model, "terms")
+        if (!is.null(cl <- attr(Terms, "dataClasses")))
+            .checkMFClasses(cl, mf)
     }
 
     X <- model.matrix(object$formulas, data = mf, rhs = 1)
     Z <- model.matrix(object$formulas, data = mf, rhs = 2)
 
+    ## extract relevant model components
     b <- object$coefficients
     s1 <- exp(b[length(b) - 1])
     s2 <- exp(b[length(b)])
@@ -39,6 +90,7 @@ predict.ultimatum <- function(object, newdata, ...)
     fit2 <- as.numeric(Z %*% g)
     Q <- object$maxOffer
 
+    ## expected offer and probability of acceptance
     Ey <- Q - fit1 - s2 * (1 + LW(exp((Q - fit1 - s2 - fit2) / s2)))
     PrA <- 1 / (1 + exp(-(Ey - fit2) / s2))
 
@@ -62,29 +114,44 @@ offerPDF <- function(y, maxOffer, fit1, fit2, s1, s2)
 
 logLikUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 {
+    ## extract parameters
     s1 <- exp(b[length(b) - 1])
     s2 <- exp(b[length(b)])
     b <- head(b, length(b) - 2)
     g <- tail(b, ncol(regr$Z))
     b <- head(b, length(b) - ncol(regr$Z))
 
+    ## fitted reservation values
     fit1 <- as.numeric(regr$X %*% b)
     fit2 <- as.numeric(regr$Z %*% g)
 
+    ## probability of acceptance (using finiteProbs to avoid numerical issues)
     prAccept <- finiteProbs(1 / (1 + exp(-(y - fit2) / s2)))
 
+    ## probability of making an offer of 0 ('lowball') or the maximal offer
+    ## ('highball'), and interior density of observed offer
     lowball <- finiteProbs(offerCDF(0, maxOffer, fit1, fit2, s1, s2))
     highball <- finiteProbs(1 - offerCDF(maxOffer, maxOffer, fit1, fit2, s1,
                                          s2))
     interior <- offerPDF(y, maxOffer, fit1, fit2, s1, s2)
 
+    ## identify maximal/minimal offers
     isMax <- abs(y - maxOffer) < offertol
     isMin <- abs(y) < offertol
 
-    ans <- ifelse(isMax, highball, ifelse(isMin, lowball, interior))
-    ans <- replace(ans, ans < .Machine$double.eps, .Machine$double.eps)
-    if (!offerOnly)
-        ans <- ans * finiteProbs(ifelse(acc == 1, prAccept, 1 - prAccept))
+    ## evaulate log-likelihood for offers
+    ans1 <- ifelse(isMax, highball, ifelse(isMin, lowball, interior))
+    ans1 <- replace(ans1, ans1 < .Machine$double.eps, .Machine$double.eps)
+    ans <- ans1
+    attr(ans, "offer") <- log(ans1)
+
+    ## evaluate log-likelihood for acceptance (if observed)
+    if (!offerOnly) {
+        ans2 <- finiteProbs(ifelse(acc == 1, prAccept, 1 - prAccept))
+        ans <- ans * ans2
+        attr(ans, "accept") <- log(ans2)
+    }
+
     ans <- log(ans)
     return(ans)
 }
@@ -100,6 +167,10 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
     g <- tail(b, ncol(regr$Z))
     b <- head(b, length(b) - ncol(regr$Z))
 
+    ## 'finitize' used liberally here to avoid numerical problems -- experience
+    ## suggests it would be ill-advised to remove it, since all the exponentials
+    ## can blow up, and ratios of them result in NaNs, which crash the fitting
+    ## procedure
     fit1 <- finitize(as.numeric(regr$X %*% b))
     fit2 <- finitize(as.numeric(regr$Z %*% g))
 
@@ -134,6 +205,7 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
     ans[isMin, ] <- dF[isMin, ]
     ans[isMax, ] <- d1mF[isMax, ]
 
+    ## gradient contribution in case acceptance is observed
     if (!offerOnly) {
         ey2ey <-
             finitize(exp((fit2 - y) / s2)) / finitize(1 + exp((fit2 - y) / s2))
@@ -161,7 +233,7 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 }
 
 ##' Estimates the statistical ultimatum game described in Ramsay and Signorino
-##' (2009), illustrated below in \dQuote{Details}.
+##' (2009), illustrated below in "Details".
 ##'
 ##' The model corresponds to the following extensive-form game, described in
 ##' Ramsay and Signorino (2009):
@@ -185,26 +257,24 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 ##' should take the form \code{offer + acceptance}, where \code{outcome}
 ##' contains the numeric value of the offer made and \code{acceptance} is an
 ##' indicator for whether it was accepted.  (If \code{outcome} is set to
-##' \dQuote{offer}, the acceptance indicator can be omitted.  See below for
-##' more.)
+##' "offer", the acceptance indicator can be omitted.  See below for more.)
 ##'
 ##' The \code{outcome} argument refers to whether the outcome of interest is
 ##' just the level of the offer made, or both the level of the offer and whether
 ##' it was accepted.  If acceptance was unobserved, then \code{outcome} should
-##' be set to \dQuote{offer}.  If so, the estimates for Player 2's reservation
-##' value should be interpreted as Player 1's expectations about these
-##' parameters.  It may also be useful to set \code{outcome} to \dQuote{offer}
-##' even if acceptance data are available, for the purpose of comparing the
-##' strategic model to other models of offer levels (as in Ramsay and Signorino
-##' 2009).  If an acceptance variable is specified but \code{outcome} is set to
-##' \dQuote{offer}, the acceptance data will be used for starting values but not
-##' in the actual fitting.
+##' be set to "offer".  If so, the estimates for Player 2's reservation value
+##' should be interpreted as Player 1's expectations about these parameters.  It
+##' may also be useful to set \code{outcome} to "offer" even if acceptance data
+##' are available, for the purpose of comparing the strategic model to other
+##' models of offer levels (as in Ramsay and Signorino 2009).  If an acceptance
+##' variable is specified but \code{outcome} is set to "offer", the acceptance
+##' data will be used for starting values but not in the actual fitting.
 ##'
 ##' Numerical instability is not uncommon in the statistical ultimatum game,
 ##' especially when the scale parameters are being estimated.
 ##' @title Statistical ultimatum game
 ##' @param formulas a list of two formulas, or a \code{\link{Formula}} object
-##' with two right-hand sides.  See \dQuote{Details} and the examples below.
+##' with two right-hand sides.  See "Details" and the examples below.
 ##' @param data data frame containing the variables in the model.
 ##' @param subset optional logical expression specifying which observations from
 ##' \code{data} to use in fitting.
@@ -220,26 +290,27 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 ##' default), the parameter will be estimated.
 ##' @param s2 numeric: scale parameter for Player 2.  If \code{NULL} (the
 ##' default), the parameter will be estimated.
-##' @param outcome the outcome of interest: just Player 1's offer
-##' (\dQuote{offer}) or both the offer and its acceptance (\dQuote{both}).  See
-##' \dQuote{Details}.
+##' @param outcome the outcome of interest: just Player 1's offer ("offer") or
+##' both the offer and its acceptance ("both").  See "Details".
 ##' @param boot integer: number of bootstrap iterations to perform (if any).
 ##' @param bootreport logical: whether to print status bar when performing
 ##' bootstrap iterations.
 ##' @param profile output from running \code{\link{profile.game}} on a previous
 ##' fit of the model, used to generate starting values for refitting when an
 ##' earlier fit converged to a non-global maximum.
+##' @param method character string specifying which optimization routine to use
+##' (see \code{\link{maxLik}})
 ##' @param ... other arguments to pass to the fitting function (see
-##' \code{\link{maxBFGS}}).
+##' \code{\link{maxLik}}).
 ##' @param reltol numeric: relative convergence tolerance level (see
 ##' \code{\link{optim}}).  Use of values higher than the default is discouraged.
 ##' @return An object of class \code{c("game", "ultimatum")}.  For details on
 ##' the \code{game} class, see \code{\link{egame12}}.  The \code{ultimatum}
 ##' class is just for use in the generation of predicted values (see
-##' \code{\link{predProbs}}).
+##' \code{\link{predProbs}}) and profiling (see \code{\link{profile.game}}).
 ##' @export
-##' @references Kristopher W. Ramsay and Curtis S. Signorino.  2009.  \dQuote{A
-##' Statistical Model of the Ultimatum Game.}  Available online at
+##' @references Kristopher W. Ramsay and Curtis S. Signorino.  2009.  "A
+##' Statistical Model of the Ultimatum Game."  Available online at
 ##' \url{http://www.rochester.edu/college/psc/signorino/research/RamsaySignorino_Ultimatum.pdf}.
 ##' @author Brenton Kenkel (\email{brenton.kenkel@@gmail.com}) and Curtis
 ##' S. Signorino
@@ -257,6 +328,7 @@ logLikGradUlt <- function(b, y, acc, regr, maxOffer, offerOnly, offertol, ...)
 ##' ## estimating offer size only
 ##' f2 <- update(Formula(f1), offer ~ .)
 ##' m2 <- ultimatum(f2, data = data_ult, maxOffer = 15, outcome = "offer")
+##' summary(m2)
 ##'
 ##' ## fixing scale terms
 ##' m3 <- ultimatum(f1, data = data_ult, maxOffer = 15, s1 = 5, s2 = 1)
@@ -268,6 +340,7 @@ ultimatum <- function(formulas, data, subset, na.action,
                       boot = 0,
                       bootreport = TRUE,
                       profile,
+                      method = "BFGS",
                       ...,
                       reltol = 1e-12)
 {
@@ -288,6 +361,7 @@ ultimatum <- function(formulas, data, subset, na.action,
     mf[[1]] <- as.name("model.frame")
     mf <- eval(mf, parent.frame())
 
+    ## sanity checks/determine whether acceptance was specified
     ya <- model.part(formulas, mf, lhs = 1, drop = TRUE)
     if (length(dim(ya))) {
         y <- ya[, 1]
@@ -305,16 +379,18 @@ ultimatum <- function(formulas, data, subset, na.action,
     if (any(y > maxOffer))
         stop("observed offers greater than maxOffer")
 
+    ## retrieve the regressors for each player's reservation value
     regr <- list()
     regr$X <- model.matrix(formulas, data = mf, rhs = 1)
     regr$Z <- model.matrix(formulas, data = mf, rhs = 2)
 
+    ## scale terms
     s1 <- if (s1null) log(sd(y)) else log(s1)
     s2 <- if (s2null) log(sd(y)) else log(s2)
 
-    ## suppressing warnings in the logit fitting because fitted probabilities
-    ## numerically equal to 0/1 seem to occur often
     if (missing(profile) || is.null(profile)) {
+        ## run a kind of pseudo-sbi to get starting values (performance of this
+        ## is iffy, especially for getting the probability of acceptance)
         aa <- if (!is.null(a)) a else as.numeric(y >= mean(y))
         m2 <- suppressWarnings(glm.fit(regr$Z, aa,
                                        family = binomial(link = "logit"),
@@ -323,6 +399,8 @@ ultimatum <- function(formulas, data, subset, na.action,
         m1 <- lsfit(regr$X, maxOffer - y, intercept = FALSE)
         sval <- c(m1$coefficients, m2$coefficients, s1, s2)
 
+        ## see if the pseudo-sbi yields a finite log-likelihood; if not, just
+        ## set everything to 0 except the constants
         firstTry <- logLikUlt(sval, y = y, acc = a, regr = regr, maxOffer =
                               maxOffer, offerOnly = offerOnly, offertol =
                               offertol)
@@ -335,32 +413,39 @@ ultimatum <- function(formulas, data, subset, na.action,
         sval <- svalsFromProfile(profile)
     }
 
+    ## give names to starting values
     names(sval) <- c(paste("R1", colnames(regr$X), sep = ":"),
                      paste("R2", colnames(regr$Z), sep = ":"),
                      "log(s1)", "log(s2)")
 
+    ## determine which parameters are to be fixed
     fvec <- logical(length(sval))
     if (!s1null) fvec[length(fvec) - 1] <- TRUE
     if (!s2null) fvec[length(fvec)] <- TRUE
     names(fvec) <- names(sval)
 
-    results <- maxBFGS(fn = logLikUlt, grad = logLikGradUlt, start = sval, fixed
-                       = fvec, y = y, acc = a, regr = regr, maxOffer =
-                       maxOffer, offerOnly = offerOnly, offertol = offertol,
-                       reltol = reltol, ...)
-    if (results$code) {
-        warning("Model fitting did not converge\nMessage: ",
-                results$message)
+    results <- maxLik(logLik = logLikUlt, grad = logLikGradUlt, start = sval,
+                      fixed = fvec, method = method, y = y, acc = a, regr =
+                      regr, maxOffer = maxOffer, offerOnly = offerOnly, offertol
+                      = offertol, reltol = reltol, ...)
+
+    cc <- convergenceCriterion(method)
+    if (!(results$code %in% cc)) {
+        warning("Model fitting did not converge\nCode:", results$code,
+                "\nMessage: ", results$message)
     }
 
     if (boot > 0) {
-        bootMatrix <- gameBoot(boot, report = bootreport, estimate =
-                               results$estimate, y = y, a = a, regr = regr, fn
-                               = logLikUlt, gr = logLikGradUlt , fixed = fvec,
-                               maxOffer = maxOffer, offerOnly = offerOnly,
-                               offertol = offertol, reltol = reltol, ...)
+        bootMatrix <-
+            gameBoot(boot, report = bootreport, estimate = results$estimate, y =
+                     y, a = a, regr = regr, fn = logLikUlt, gr = logLikGradUlt ,
+                     fixed = fvec, method = method, maxOffer = maxOffer,
+                     offerOnly = offerOnly, offertol = offertol, reltol =
+                     reltol, ...)
     }
 
+    ## create a 'game' object to store output, with some extra attributes that
+    ## are specific to the ultimatum model
     ans <- list()
     ans$coefficients <- results$estimate
     ans$vcov <- getGameVcov(results$hessian, fvec)
@@ -368,13 +453,15 @@ ultimatum <- function(formulas, data, subset, na.action,
         logLikUlt(results$estimate, y = y, acc = a, regr = regr, maxOffer =
                   maxOffer, offertol = offertol, offerOnly = offerOnly)
     ans$call <- cl
-    ans$convergence <- list(code = results$code, message = results$message,
-                            gradient = TRUE)
+    ans$convergence <- list(method = method, iter = nIter(results), code =
+                            results$code, message = results$message, gradient =
+                            TRUE)
     ans$formulas <- formulas
     ans$link <- "logit"
     ans$type <- "private"
     ans$model <- mf
-    ans$y <- y
+    ans$xlevels <- .getXlevels(attr(mf, "terms"), mf)
+    ans$y <- ya
     ans$equations <- c("R1", "R2", "log(s1)", "log(s2)")
     attr(ans$equations, "hasColon") <- c(TRUE, TRUE, FALSE, FALSE)
     names(attr(ans$equations, "hasColon")) <- ans$equations
@@ -384,7 +471,6 @@ ultimatum <- function(formulas, data, subset, na.action,
     ans$outcome <- outcome
     ans$maxOffer <- maxOffer
     ans$offertol <- offertol
-    ans$acc <- a
 
     class(ans) <- c("game", "ultimatum")
 

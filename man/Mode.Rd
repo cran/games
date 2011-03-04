@@ -13,17 +13,17 @@ the one that appears first (among those tied) is chosen.}
 \item{na.rm}{logical: strip \code{NA} values?}
 }
 \examples{x <- c(1, 3, 3, 4)
-Mode(x)  ## 3
+Mode(x)  # 3
 x.char <- letters[x]
-Mode(x.char)  ## "c"
+Mode(x.char)  # "c"
 x.factor <- as.factor(x.char)
-Mode(x.factor)  ## "c", with levels "a", "c", "d"
+Mode(x.factor)  # "c", with levels "a", "c", "d"
 x.logical <- x > 3
-Mode(x.logical)  ## FALSE
+Mode(x.logical)  # FALSE
 
 ## behavior with ties
 y <- c(3, 3, 1, 1, 2)
-Mode(y)  ## 3
+Mode(y)  # 3
 z <- c(2, 1, 1, 3, 3)
-Mode(z)  ## 1}
+Mode(z)  # 1}
 

@@ -22,8 +22,8 @@ NULL
 ##' \item{\code{distance}}{Distance (in miles) between initiator and respondent}
 ##' \item{\code{peaceyrs}}{Years since last dispute in this dyad}
 ##' \item{\code{midnum}}{Dispute's number in the MID data set}
-##' \item{\code{revis1}}{Whether the initiator had \dQuote{revisionist} aims}
-##' \item{\code{revis2}}{Whether the respondent had \dQuote{revisionist} aims}
+##' \item{\code{revis1}}{Whether the initiator had "revisionist" aims}
+##' \item{\code{revis2}}{Whether the respondent had "revisionist" aims}
 ##' \item{\code{sq}}{Indicator for status quo outcome}
 ##' \item{\code{capit}}{Indicator for capitulation outcome}
 ##' \item{\code{war}}{Indicator for war outcome}
@@ -37,18 +37,80 @@ NULL
 ##' @title 19th-century international disputes
 ##' @docType data
 ##' @references Daniel M. Jones, Stuart A. Bremer and J. David Singer.  1996.
-##' \dQuote{Militarized Interstate Disputes, 1816-1992: Rationale, Coding Rules,
-##' and Empirical Patterns.} \emph{Conflict Management and Peace Science}
-##' 15(2): 163--213.
+##' "Militarized Interstate Disputes, 1816-1992: Rationale, Coding Rules, and
+##' Empirical Patterns." \emph{Conflict Management and Peace Science} 15(2):
+##' 163--213.
 ##' @seealso \code{\link{egame12}}
 ##' @keywords data
+NULL
+
+##' Data on speculative currency attacks and devaluation decisions for 90
+##' countries from 1985 to 1998.
+##'
+##' The dataset is taken from Leblang (2003).  The unit of
+##' observation is the country-month, and the variables are: \describe{
+##' \item{\code{outcome}}{Whether the country faced no speculative attack,
+##' defended its currency against an attack, or devalued in response to an
+##' attack in the given month}
+##' \item{\code{preelec}}{Indicator for being in the three months prior to an
+##' election}
+##' \item{\code{postelec}}{Indicator for being in the three months following an
+##' election}
+##' \item{\code{rightgov}}{Indicator for a right-wing party being in power}
+##' \item{\code{unifgov}}{Indicator for unified government: in presidential
+##' systems, the same party controlling the presidency and the lower house of
+##' the legislature; in parliamentary systems, one party/coalition having a
+##' majority of seats}
+##' \item{\code{lreserves}}{Logged ratio of currency reserves to base money in
+##' the previous month}
+##' \item{\code{realinterest}}{Domestic real interest rate in the previous
+##' month}
+##' \item{\code{lexports}}{Logged ratio of exports to GDP in the previous month}
+##' \item{\code{capcont}}{Indicator for capital controls in the previous year}
+##' \item{\code{overval}}{Overvaluation of the real exchange rate}
+##' \item{\code{creditgrow}}{Domestic credit growth in the previous month}
+##' \item{\code{service}}{External debt service (as percentage of exports) paid
+##' in previous month}
+##' \item{\code{USinterest}}{U.S. domestic interest rates in the previous month}
+##' \item{\code{contagion}}{Number of other countries experiencing speculative
+##' attacks in the same month}
+##' \item{\code{prioratt}}{Number of prior speculative attacks experienced by the
+##' country}
+##' \item{\code{nation}}{Country name}
+##' \item{\code{month}}{Month of observation}
+##' \item{\code{year}}{Year of observation}
+##' }
+##' All of the non-binary variables other than \code{nation}, \code{month},
+##' and \code{year} are standardized to have mean 0 and unit variance.
+##'
+##' We are grateful to David Leblang for allowing us to redistribute his data.
+##' The original replication file is available in Stata format at
+##' \url{http://www.faculty.virginia.edu/leblang/Leblang/Data_files/strat.dta}
+##' (as of 2010-03-01).
+##' @name leblang2003
+##' @usage data(leblang2003)
+##' @title Currency attacks
+##' @docType data
+##' @references David Leblang.  2003.  "To Defend or Devalue: The Political
+##' Economy of Exchange Rate Policy."  \emph{International Studies Quarterly}
+##' 47: 533--559.
+##' @seealso \code{\link{egame12}}
+##' @keywords data
+##' @examples
+##' ## replicate analysis in Leblang (2003)
+##' data(leblang2003)
+##' m1 <- egame12(outcome ~ capcont + lreserves + overval + creditgrow +
+##' USinterest + service + contagion + prioratt - 1 | 1 | 1 | unifgov + lexports
+##' + preelec + postelec + rightgov + realinterest + capcont + lreserves, data =
+##' leblang2003, link = "probit", type = "private")
+##'
+##' summary(m1)
 NULL
 
 ##' Simulated data for illustrating \code{\link{egame122}}.
 ##'
 ##' The variables are: \describe{
-##' \item{\code{f1}, \code{f2}}{Factors with levels \dQuote{a}, \dQuote{b},
-##' \dQuote{c}}
+##' \item{\code{f1}, \code{f2}}{Factors with levels "a", "b", "c"}
 ##' \item{\code{x1}--\code{x5}}{Numeric variables entering Player 1's utilities}
 ##' \item{\code{z1}--\code{z3}}{Numeric variables entering Player 2's utilities}
 ##' \item{\code{a1}}{Indicator for Player 1's move (L or R)}
@@ -60,6 +122,25 @@ NULL
 ##' @title Simulated egame122 data
 ##' @docType data
 ##' @seealso \code{\link{egame122}}
+##' @keywords data
+NULL
+
+##' Simulated data for illustrating \code{\link{egame123}}.
+##'
+##' The variables are: \describe{
+##' \item{\code{x1}--\code{x8}}{Regressors}
+##' \item{\code{a1}}{Indicator for Player 1's move (L or R)}
+##' \item{\code{a2}}{Indicator for Player 2's move (L or R)}
+##' \item{\code{a3}}{Indicator for Player 3's move (L or R)}
+##' \item{\code{y}}{Numeric variable containing outcome number: 1, 3, 5, or 6,
+##' corresponding to labels in the game tree in the \code{\link{egame123}}
+##' documentation.}
+##' }
+##' @name data_123
+##' @usage data(data_123)
+##' @title Simulated egame123 data
+##' @docType data
+##' @seealso \code{\link{egame123}}
 ##' @keywords data
 NULL
 

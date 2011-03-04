@@ -8,7 +8,13 @@
 models have failed to converge to a global maximum.  For each parameter
 profiled (see \code{\link{profile.game}} for details of the profiling
 process), a spline interpolation of the log-likelihood profile is provided,
-with an "x" marking the value at the original parameter estimate.}
+with an "x" marking the value at the original parameter estimate.
+
+Sometimes the plot will seem to indicate that the original fit did not reach
+the global maximum, even though \code{profile.game} did not issue the
+non-covergence warning.  This is an artifact of the interpolation, which can
+be confirmed by re-running \code{plot.profile.game} with the argument
+\code{show.pts = TRUE}.}
 \value{\code{x}, invisibly}
 \seealso{\code{\link{profile.game}}}
 \author{Brenton Kenkel}

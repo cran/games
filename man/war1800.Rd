@@ -23,8 +23,8 @@ weighted by initiator's region}
 \item{\code{distance}}{Distance (in miles) between initiator and respondent}
 \item{\code{peaceyrs}}{Years since last dispute in this dyad}
 \item{\code{midnum}}{Dispute's number in the MID data set}
-\item{\code{revis1}}{Whether the initiator had \dQuote{revisionist} aims}
-\item{\code{revis2}}{Whether the respondent had \dQuote{revisionist} aims}
+\item{\code{revis1}}{Whether the initiator had "revisionist" aims}
+\item{\code{revis2}}{Whether the respondent had "revisionist" aims}
 \item{\code{sq}}{Indicator for status quo outcome}
 \item{\code{capit}}{Indicator for capitulation outcome}
 \item{\code{war}}{Indicator for war outcome}
@@ -35,9 +35,9 @@ occurs)}
 }}
 \docType{data}
 \references{Daniel M. Jones, Stuart A. Bremer and J. David Singer.  1996.
-\dQuote{Militarized Interstate Disputes, 1816-1992: Rationale, Coding Rules,
-and Empirical Patterns.} \emph{Conflict Management and Peace Science}
-15(2): 163--213.}
+"Militarized Interstate Disputes, 1816-1992: Rationale, Coding Rules, and
+Empirical Patterns." \emph{Conflict Management and Peace Science} 15(2):
+163--213.}
 \seealso{\code{\link{egame12}}}
 \keyword{data}
 

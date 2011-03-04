@@ -23,9 +23,9 @@ document.
 The \code{digits} option does not yet work seamlessly; you may have to
 resort to trial and error.}
 \value{\code{x}, invisibly.}
-\references{Curtis S. Signorino and Ahmer Tarar.  2006.  \dQuote{A Unified
-Theory and Test of Extended Immediate Deterrence.}  \emph{American Journal
-of Political Science} 50(3):586--605.}
+\references{Curtis S. Signorino and Ahmer Tarar.  2006.  "A Unified Theory
+and Test of Extended Immediate Deterrence."  \emph{American Journal of
+Political Science} 50(3):586--605.}
 \author{Brenton Kenkel (\email{brenton.kenkel@gmail.com})}
 \arguments{\item{x}{a fitted model of class \code{game}.}
 \item{digits}{number of digits to print.}

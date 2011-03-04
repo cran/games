@@ -2,10 +2,23 @@
 NULL
 
 ##
-## Calculates bootstrap results for a strategic model.
+## INPUT:
+## boot: number of bootstrap iterations
+## report: whether to print status bar
+## estimate: original fit coefficients
+## y: dependent variable
+## a: acceptance vector (for ultimatum only)
+## regr: list of regressor matrices
+## fn: log-likelihood function
+## gr: gradient function (if any)
+## fixed: logical vector indicating which parameters are held fixed
+## method: optimization routine to use
+##
+## RETURN:
+## matrix of bootstrap results, each row an iteration
 ## 
 gameBoot <- function(boot, report = TRUE, estimate, y, a = NULL, regr, fn, gr,
-                      fixed, ...)
+                     fixed, method, ...)
 {
     bootMatrix <- matrix(NA, nrow = boot, ncol = length(estimate))
     failedBoot <- logical(boot)
@@ -18,11 +31,13 @@ gameBoot <- function(boot, report = TRUE, estimate, y, a = NULL, regr, fn, gr,
         newy <- y[bootSamp]
         newa <- a[bootSamp]  ## for the ultimatum model
         newregr <- lapply(regr, function(x) x[bootSamp, , drop = FALSE])
-        bootResults <- maxBFGS(fn = fn, grad = gr, start = estimate, fixed =
-                               fixed, y = newy, acc = newa, regr = newregr, ...)
-        if (bootResults$code) {
+        bootResults <- maxLik(logLik = fn, grad = gr, start = estimate, fixed =
+                              fixed, method = method, y = newy, acc = newa, regr
+                              = newregr, ...)
+        cc <- convergenceCriterion(method)
+        if (!(bootResults$code %in% cc)) {
             warning("bootstrap iteration ", i,
-                    "failed to converge and will be removed")
+                    " failed to converge and will be removed")
             failedBoot[i] <- TRUE
         }
         bootMatrix[i, ] <- bootResults$estimate
@@ -37,6 +52,7 @@ gameBoot <- function(boot, report = TRUE, estimate, y, a = NULL, regr, fn, gr,
     return(bootMatrix)
 }
 
+## TODO: get rid of this function
 ##
 ## Calculates the variance-covariance matrix for a fitted model, including a
 ## procedure for catching the error (and returning a matrix of NAs) in case the
@@ -58,8 +74,11 @@ getGameVcov <- function(hessian, fixed)
 }
 
 ##
-## Ensures that estimated probabilities aren't numerically equal to 1 or 0, in
-## order to ensure no -Infs or 0s in log-likelihoods.
+## INPUT:
+## x: numeric vector of values in [0, 1]
+##
+## RETURN:
+## numeric vector, ensuring all values of x are numerically inside (0, 1)
 ##
 finiteProbs <- function(x)
 {
@@ -69,6 +88,13 @@ finiteProbs <- function(x)
     return(x)
 }
 
+##
+## INPUT:
+## x: numeric vector
+##
+## RETURN:
+## numeric vector, replacing Inf with largest representable values
+##
 finitize <- function(x)
 {
     x <- ifelse(is.finite(x), x, sign(x) * .Machine$double.xmax)
@@ -76,14 +102,20 @@ finitize <- function(x)
 }
 
 ##
-## Used to ensure that the "formulas" argument of each fitting function contains
-## a valid type of object and coerces it to "Formula" class.  Returns an error
-## if the function isn't a formula, Formula, or list of formulas.
+## INPUT:
+## f: object inheriting from class "formula", or a list of such objects
+## argname: character string specifying the name of the argument being checked
+## in the original function (in order to give an informative error message in
+## case of failure)
+##
+## RETURN:
+## object of class "Formula", combining supplied formulas (if 'f' is a list)
+## into a big one with multiple right-hand sides
 ##
 checkFormulas <- function(f, argname = "formulas")
 {
     if (inherits(f, "list")) {
-        f <- do.call(as.Formula, f)
+        f <- do.call(as.Formula, unname(f))
     } else if (inherits(f, "formula")) {
         f <- as.Formula(f)
     } else {
@@ -94,7 +126,11 @@ checkFormulas <- function(f, argname = "formulas")
 }
 
 ##
-## Takes a list of vectors and finds their intersection
+## INPUT:
+## ...: vectors of any standard class
+##
+## RETURN:
+## vector of elements contained in all vectors in '...'
 ##
 intersectAll <- function(...)
 {
@@ -106,20 +142,41 @@ intersectAll <- function(...)
 }
 
 ##
-## Makes the names of the variables for egame12 and egame122 models.
+## INPUT:
+## varNames: list of character vectors, each containing the variable names for
+## one utility or variance equation
+## prefixes: character vector containing names of utility equations (but not
+## variance terms)
+## utils: integer containing indices of utility equations (or any others where
+## "equation:(Intercept)" should not be truncated to "equation")
+## link: "logit" or "probit"
+## sdterms: number of variance equations
+##
+## RETURN:
+## varNames: character vector of variable names
+## hasColon: logical vector indicating which utility/variance equations are not
+## fixed to 0 or contain only a constant
 ## 
-makeVarNames <- function(varNames, prefixes, link, sdterms)
+makeVarNames <- function(varNames, prefixes, utils, link, sdterms)
 {
     vname <- if (link == "logit") "log(lambda" else "log(sigma"
-    if (sdterms == 1) {
+    if (sdterms == 1L) {
         prefixes <- c(prefixes, paste(vname, ")", sep = ""))
-    } else if (sdterms == 2) {
-        prefixes <- c(prefixes, paste(vname, 1:2, ")", sep = ""))
+    } else if (sdterms > 1L) {
+        prefixes <- c(prefixes, paste(vname, 1:sdterms, ")", sep = ""))
     }
 
-    hasColon <- sapply(varNames, function(x) length(x) > 0 &&
-                       !all(x == "(Intercept)"))
+    ## no colon for any equation with no terms (i.e. fixed to 0), but exclude
+    ## colon for intercept-only equations that aren't utility equations
+    ## (e.g. scale parameters in the ultimatum model)
+    utils <- 1:length(varNames) %in% utils
+    noTerms <- sapply(varNames, function(x) length(x) == 0)
+    onlyConstant <- sapply(varNames, function(x) all(x == "(Intercept)"))
+    hasColon <- rep(TRUE, length(varNames))
+    hasColon[noTerms] <- FALSE
+    hasColon[onlyConstant & !utils] <- FALSE
     names(hasColon) <- prefixes
+
     for (i in seq_along(varNames)) {
         if (hasColon[i]) {
             varNames[[i]] <- paste(prefixes[i], varNames[[i]], sep = ":")
@@ -133,17 +190,18 @@ makeVarNames <- function(varNames, prefixes, link, sdterms)
 }
 
 ##
-## Calculates utilities from the given list of regressors (regr) and vector of
-## coefficients (b); returns the regressors and the "remaining" coefficients
-## (those for scale parameters, if any) in a list.
+## INPUT:
+## b: parameter vector
+## regr: list of regressor matrices
+## nutils: number of utility equations
+## unames: names of utility equations
+## finit: whether to coerce utilities not to contain any Infs
 ##
-## nutils specifies which elements of regr are for utilities rather than scale
-## parameters; e.g., if nutils = 4, then the first four matrices of regr are
-## used to create utility vectors, and the rest are used for scale terms.
-##
-## unames, which must be of length nutils, specifies names for the utility terms
-## in the list returned.
-##
+## RETURN:
+## list of numeric vectors (named according to 'unames') of fitted utilities,
+## along with element 'b' containing unused parameters (those pertaining to
+## variance terms)
+## 
 makeUtils <- function(b, regr, nutils, unames, finit = TRUE)
 {
     utils <- vector("list", nutils)
@@ -170,7 +228,11 @@ makeUtils <- function(b, regr, nutils, unames, finit = TRUE)
 }
 
 ##
-## Retrieves the "best" starting values from profile.game output
+## INPUT:
+## x: output from profile.game
+##
+## RETURN:
+## vector of parameters giving the highest profiled log-likelihood
 ##
 svalsFromProfile <- function(x)
 {
@@ -180,4 +242,26 @@ svalsFromProfile <- function(x)
     ans <- as.numeric(x[bestrow, ][-1])
     names(ans) <- xn
     return(ans)
+}
+
+##
+## INPUT:
+## method: character string describing optimization method used
+##
+## RETURN:
+## vector of integer values corresponding to convergence codes indicating
+## success (which differ by method in maxLik)
+## 
+convergenceCriterion <- function(method)
+{
+    switch(tolower(method),
+           `newton-raphson` = c(1L, 2L),
+           nr = c(1L, 2L),
+           bfgs = 0L,
+           bfgsr = c(1L, 2L),
+           `bfgs-r` = c(1L, 2L),
+           bhhh = c(1L, 2L),
+           `nelder-mead` = 0L,
+           nm = 0L,
+           sann = 0L)
 }

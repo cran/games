@@ -5,8 +5,7 @@
 \usage{data(data_122)}
 \description{Simulated data for illustrating \code{\link{egame122}}.}
 \details{The variables are: \describe{
-\item{\code{f1}, \code{f2}}{Factors with levels \dQuote{a}, \dQuote{b},
-\dQuote{c}}
+\item{\code{f1}, \code{f2}}{Factors with levels "a", "b", "c"}
 \item{\code{x1}--\code{x5}}{Numeric variables entering Player 1's utilities}
 \item{\code{z1}--\code{z3}}{Numeric variables entering Player 2's utilities}
 \item{\code{a1}}{Indicator for Player 1's move (L or R)}

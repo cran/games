@@ -1,9 +1,9 @@
 \name{profile.game}
 \alias{profile.game}
 \title{Likelihood profiles for fitted strategic models}
-\usage{\method{profile}{game}(fitted, which=1:p, steps=5, dist=3, ...)
+\usage{\method{profile}{game}(fitted, which=1:p, steps=5, dist=3, report=TRUE, ...)
 }
-\description{.. content for description (no empty lines) ..}
+\description{Calculate profile likelihood to assess convergence of a model.}
 \details{Likelihood profiling can help determine if a model fit failed to reach a
 global maximum, which can be an issue (especially for the
 \code{\link{ultimatum}} model).  The process of profiling is as follows: a
@@ -41,8 +41,10 @@ fixed in the original fitting are ignored if selected.}
 value for each parameter to be profiled.}
 \item{dist}{number of standard errors the last step should be from the
 original parameter value.}
+\item{report}{logical: whether to print status bar (for complex models or
+those with many parameters, profiling can be lengthy)}
 \item{...}{other arguments to be passed to the fitting function (see
-\code{\link{maxBFGS}}).}
+\code{\link{maxLik}}).}
 }
 \examples{data(student_offers)
 

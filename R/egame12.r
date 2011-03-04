@@ -2,36 +2,33 @@
 ##' @include helpers.r
 NULL
 
-predict.egame12 <- function(object, newdata, probs = c("outcome", "action"), ...)
+predict.egame12 <- function(object, newdata, probs = c("outcome", "action"),
+                            na.action = na.pass, ...)
 {
     probs <- match.arg(probs)
     
-    if (missing(newdata))
-        newdata <- object$model
+    if (missing(newdata)) {
+        ## use original data if 'newdata' not supplied
+        mf <- object$model
+    } else {
+        ## get rid of left-hand variables in the formula, since they're not
+        ## needed for fitting
+        formulas <- Formula(delete.response(terms(formula(object$formulas))))
 
-    mf <- match(c("subset", "na.action"), names(object$call), 0L)
-    mf <- object$call[c(1L, mf)]
-    mf$formula <- object$formulas
-    mf$data <- newdata
-    mf$drop.unused.levels <- TRUE
-    mf[[1]] <- as.name("model.frame")
-    mf <- eval(mf, parent.frame())
+        mf <- model.frame(formulas, data = newdata, na.action = na.action,
+                          xlev = object$xlevels)
 
-    ## This is to prevent goofy things from happening with factor variables --
-    ## it ensures that the levels of factor variables in "newdata" are the same
-    ## as those in the model frame used in the original fitting
-    for (i in 1:ncol(mf)) {
-        if (is.factor(mf[, i])) {
-            iname <- names(mf)[i]
-            if (iname %in% names(object$model))
-                levels(mf[, i]) <- levels(object$model[, iname])
-        }
+        ## check that variables are of the right classes
+        Terms <- attr(object$model, "terms")
+        if (!is.null(cl <- attr(Terms, "dataClasses")))
+            .checkMFClasses(cl, mf)
     }
 
     regr <- list()
     for (i in seq_len(length(object$formulas)[2]))
         regr[[i]] <- model.matrix(object$formulas, data = mf, rhs = i)
 
+    ## get action probabilities, as given by fitted model parameters
     ans <- makeProbs12(object$coefficients, regr = regr, link = object$link, type
                       = object$type)
     ans <- do.call(cbind, ans)
@@ -58,29 +55,33 @@ sbi12 <- function(y, regr, link)
     } else {
         fam <- binomial(link = "logit")
     }
-    
+
+    ## regression for player 2's choice
     Z2 <- regr$Z[y != 1, ]
     y2 <- as.numeric(y == 3)[y != 1]
-    m2 <- glm.fit(Z2, y2, family = fam)
+    m2 <- suppressWarnings(glm.fit(Z2, y2, family = fam))
     p4 <- as.numeric(regr$Z %*% coef(m2))
     p4 <- if (link == "probit") pnorm(p4) else plogis(p4)
 
+    ## regression for player 1's choice
     X1 <- cbind(-regr$X1, (1 - p4) * regr$X3, p4 * regr$X4)
     y1 <- as.numeric(y != 1)
-    m1 <- glm.fit(X1, y1, family = fam)
+    m1 <- suppressWarnings(glm.fit(X1, y1, family = fam))
 
+    ## need to multiply by sqrt(2) because the standard glm assumes dispersion
+    ## parameter 1, but agent error implies dispersion parameter sqrt(2)
     ans <- sqrt(2) * c(coef(m1), coef(m2))
     return(ans)
 }
 
 makeSDs12 <- function(b, regr, type)
 {
-    sds <- vector("list", 4)
+    sds <- vector("list", 5)
     rcols <- sapply(regr, ncol)
 
     if (length(rcols) == 5) {  ## sdByPlayer == FALSE
         v <- exp(as.numeric(regr[[5]] %*% b))
-        for (i in 1:4) sds[[i]] <- v
+        for (i in 1:5) sds[[i]] <- v
     } else {
         v1 <- exp(as.numeric(regr[[5]] %*% b[1:rcols[5]]))
         v2 <- exp(as.numeric(regr[[6]] %*% b[(rcols[5]+1):length(b)]))
@@ -89,7 +90,7 @@ makeSDs12 <- function(b, regr, type)
             sds[[3]] <- sds[[4]] <- v2
         } else {
             sds[[1]] <- sds[[2]] <- sds[[3]] <- v1
-            sds[[4]] <- v2
+            sds[[4]] <- sds[[5]] <- v2
         }
     }
 
@@ -101,9 +102,10 @@ makeProbs12 <- function(b, regr, link, type)
     utils <- makeUtils(b, regr, nutils = 4,
                        unames = c("u11", "u13", "u14", "u24"))
 
-    ## length(utils$b) == 0 means no terms left for the variance components
+    ## length(utils$b) == 0 means no terms left for the variance components, so
+    ## set these to 1
     if (length(utils$b) == 0) {
-        sds <- as.list(rep(1, 4))
+        sds <- as.list(rep(1, 5))
     } else {
         sds <- makeSDs12(utils$b, regr, type)
     }
@@ -112,7 +114,11 @@ makeProbs12 <- function(b, regr, link, type)
                       logit = function(x, sd = 1) plogis(x, scale = sd),
                       probit = pnorm)
 
-    sd4 <- if (type == "private") sds[[4]] else sqrt(sds[[3]]^2 + sds[[4]]^2)
+    if (type == "private") {
+        sd4 <- sqrt(sds[[4]]^2 + sds[[5]]^2)
+    } else {
+        sd4 <- sqrt(sds[[3]]^2 + sds[[4]]^2)
+    }
     p4 <- finiteProbs(linkfcn(utils$u24, sd = sd4))
     p3 <- 1 - p4
 
@@ -156,26 +162,32 @@ logLikGrad12 <- function(b, y, regr, link, type, ...)
     u <- makeUtils(b, regr, nutils = 4,
                    unames = c("u11", "u13", "u14", "u24"))
     p <- makeProbs12(b, regr, link, type)
+    n <- nrow(regr$Z)
     rcols <- sapply(regr, ncol)
 
     if (link == "probit" && type == "private") {
-        dp4 <- dnorm(u$u24)
-        dgp4 <- dp4 * regr$Z
-        Dp4 <- cbind(matrix(0L, nrow = nrow(regr$X1), ncol = sum(rcols[1:3])),
-                     dgp4)
-        Dp3 <- -Dp4
+        dp4db <- matrix(0L, nrow = n, ncol = sum(rcols[1:3]))
+        dp4dg <- dnorm(u$u24 / sqrt(2)) * regr$Z / sqrt(2)
+        dp4 <- cbind(dp4db, dp4dg)
+        dp3 <- -dp4
 
-        dp1 <- dnorm((u$u11 - p$p3 * u$u13 - p$p4 * u$u14) /
-                     sqrt(1 + p$p3^2 + p$p4^2))
-        dp1 <- dp1 / sqrt(1 + p$p3^2 + p$p4^2)
-        dbp1 <- dp1 * cbind(regr$X1, -p$p3 * regr$X3, -p$p4 * regr$X4)
-        dgp1 <- (dp1 * dgp4) / sqrt(1 + p$p3^2 + p$p4^2)
-        dgp1 <- dgp1 * ((u$u13 - u$u14) * sqrt(1 + p$p3^2 + p$p4^2) -
-                        (u$u11 - p$p3*u$u13 - p$p4*u$u14) *
-                        ((p$p4 - p$p3) / sqrt(1 + p$p3^2 + p$p4^2)))
-        Dp1 <- cbind(dbp1, dgp1)
-        Dp2 <- -Dp1
+        num2 <- p$p3 * u$u13 + p$p4 * u$u14 - u$u11
+        denom2 <- sqrt(1 + p$p3^2 + p$p4^2)
+        dn2 <- dnorm(num2 / denom2)
+        dp2db1 <- dn2 * (-regr$X1 / denom2)
+        dp2db3 <- dn2 * p$p3 * regr$X3 / denom2
+        dp2db4 <- dn2 * p$p4 * regr$X4 / denom2
+        dp2dg <- dn2 * ((u$u14-u$u13)*denom2 - (p$p4-p$p3)*num2/denom2)
+        dp2dg <- (dp2dg * dp4dg) / (denom2^2)
+        Dp2 <- cbind(dp2db1, dp2db3, dp2db4, dp2dg)
+        Dp1 <- -Dp2
+        Dp3 <- dp3
+        Dp4 <- dp4
     } else if (type == "agent") {
+        ## unfortunately these are not as consistent in the notation as the
+        ## gradients in egame122, egame123, and ultimatum -- I intend to fix
+        ## this for the sake of future maintainers' sanity, but the ugliness
+        ## here doesn't cause any user-visible problems
         derivCDF <- switch(link,
                            logit = dlogis,
                            probit = dnorm)
@@ -197,14 +209,17 @@ logLikGrad12 <- function(b, y, regr, link, type, ...)
     dL3 <- Dp2 / p$p2 + Dp3 / p$p3
     dL4 <- Dp2 / p$p2 + Dp4 / p$p4
 
-    ans <- as.numeric(y == 1) * dL1 + as.numeric(y == 2) * dL3 +
-        as.numeric(y == 3) * dL4
+    ans <- matrix(NA, nrow = n, ncol = sum(rcols[1:4]))
+    ans[y == 1, ] <- dL1[y == 1, ]
+    ans[y == 2, ] <- dL3[y == 2, ]
+    ans[y == 3, ] <- dL4[y == 3, ]
+
     return(ans)
 }
 
 makeResponse12 <- function(yf)
 {
-    if (length(dim(yf))) {              # response specified as dummies
+    if (length(dim(yf))) {  # response specified as dummies
         Y <- yf
         if (ncol(Y) > 2)
             warning("only first two columns of response will be used")
@@ -223,14 +238,14 @@ makeResponse12 <- function(yf)
                         paste(names(Y)[1], ",", names(Y)[2], sep = ""))
     } else {
         yf <- as.factor(yf)
-        if (nlevels(yf) != 3) stop("dependent variable must have 3 values")
+        if (nlevels(yf) != 3) stop("dependent variable must have three values")
     }
 
     return(yf)
 }
 
-##' Fits a strategic model with three terminal nodes, as in the game illustrated
-##' below in \dQuote{Details}.
+##' Fits a strategic model with two players and three terminal nodes, as in the
+##' game illustrated below in "Details".
 ##'
 ##' The model corresponds to the following extensive-form game, described in
 ##' Signorino (2003):
@@ -300,14 +315,13 @@ makeResponse12 <- function(yf)
 ##' between the agent error and private information models, see Signorino
 ##' (2003).
 ##'
-##' The model is fit with the BFGS method, using the function
-##' \code{\link{maxBFGS}} from the \pkg{maxLik} package.  For the sake of speed
-##' and stability, the fitting procedure typically uses the gradient of the
-##' log-likelihood.  However, if \code{fixedUtils} or \code{sdformula} is
-##' specified, the gradient is not used.
-##' @title Strategic model with 3 terminal nodes
+##' The model is fit using \code{\link{maxLik}}, using the BFGS optimization
+##' method by default (see \code{link{maxBFGS}}).  Use the \code{method}
+##' argument to specify an alternative from among those supplied by
+##' \code{maxLik}.
+##' @title Strategic model with 2 players, 3 terminal nodes
 ##' @param formulas a list of four formulas, or a \code{\link{Formula}} object
-##' with four right-hand sides.  See \dQuote{Details} and the examples below.
+##' with four right-hand sides.  See "Details" and the examples below.
 ##' @param data a data frame containing the variables in the model.
 ##' @param subset optional logical expression specifying which observations from
 ##' \code{data} to use in fitting.
@@ -315,12 +329,11 @@ makeResponse12 <- function(yf)
 ##' the \code{na.action} setting of \code{\link{options}}.  See
 ##' \code{\link{na.omit}}.
 ##' @param link whether to use a probit (default) or logit link structure,
-##' @param type whether to use an agent-error (\dQuote{agent}, default) or
-##' private-information (\dQuote{private}) stochastic structure.
+##' @param type whether to use an agent-error ("agent", default) or
+##' private-information ("private") stochastic structure.
 ##' @param startvals whether to calculate starting values for the optimization
-##' using statistical backwards induction (\dQuote{sbi}, default), draw them
-##' from a uniform distribution (\dQuote{unif}), or to set them all to 0
-##' (\dQuote{zero})
+##' using statistical backwards induction ("sbi", default), draw them from a
+##' uniform distribution ("unif"), or to set them all to 0 ("zero")
 ##' @param fixedUtils numeric vector of values to fix for u11, u13, u14, and u24
 ##' respectively.  \code{NULL} (the default) indicates that these should be
 ##' estimated with regressors rather than fixed.
@@ -340,8 +353,10 @@ makeResponse12 <- function(yf)
 ##' @param profile output from running \code{\link{profile.game}} on a previous
 ##' fit of the model, used to generate starting values for refitting when an
 ##' earlier fit converged to a non-global maximum.
+##' @param method character string specifying which optimization routine to use
+##' (see \code{\link{maxLik}})
 ##' @param ... other arguments to pass to the fitting function (see
-##' \code{\link{maxBFGS}}).
+##' \code{\link{maxLik}}).
 ##' @return An object of class \code{c("game", "egame12")}. A
 ##' \code{game} object is a list containing: \describe{
 ##' \item{\code{coefficients}}{estimated parameters of the model.}
@@ -351,17 +366,21 @@ makeResponse12 <- function(yf)
 ##' \item{\code{log.likelihood}}{vector of individual log likelihoods (left
 ##' unsummed for use with non-nested model tests).}
 ##' \item{\code{call}}{the call used to produce the model.}
-##' \item{\code{convergence}}{a list containing the convergence code and message
-##' returned by \code{\link{maxBFGS}}, and an indicator for whether the
-##' gradient was used in fitting.}
+##' \item{\code{convergence}}{a list containing the optimization method used
+##' (see argument \code{method}), the number of iterations to convergence, the
+##' convergence code and message returned by \code{\link{maxLik}}, and an
+##' indicator for whether the (analytic) gradient was used in fitting.}
 ##' \item{\code{formulas}}{the final \code{Formula} object passed to
 ##' \code{model.frame} (including anything specified for the scale parameters).}
 ##' \item{\code{link}}{the specified link function.}
-##' \item{\code{type}}{the specified stochastic structure.}
-##' \item{\code{model}}{the model frame containing all variables used in fitting.}
+##' \item{\code{type}}{the specified stochastic structure (i.e., agent error or
+##' private information).}
+##' \item{\code{model}}{the model frame containing all variables used in
+##' fitting.}
+##' \item{\code{xlevels}}{a record of the levels of any factor regressors.}
 ##' \item{\code{y}}{the dependent variable, represented as a factor.}
 ##' \item{\code{equations}}{names of each separate equation (e.g.,
-##' \dQuote{u1(sq)}, \dQuote{u1(cap)}, etc.).}
+##' "u1(sq)", "u1(cap)", etc.).}
 ##' \item{\code{fixed}}{logical vector specifying which parameter values, if
 ##' any, were fixed in the estimation procedure.}
 ##' \item{\code{boot.matrix}}{if \code{boot} was non-zero, a matrix of bootstrap
@@ -370,14 +389,15 @@ makeResponse12 <- function(yf)
 ##' The second class of the returned object, \code{egame12}, is for use in
 ##' generation of predicted probabilities.
 ##' @seealso \code{\link{summary.game}} and \code{\link{predProbs}} for
-##' postestimation analysis; \code{\link{Formula}} for formula specification.
+##' postestimation analysis; \code{\link{makeFormulas}} for formula
+##' specification.
 ##' @export
-##' @references Jeffrey B. Lewis and Kenneth A Schultz.  2003.
-##' \dQuote{Revealing Preferences: Empirical Estimation of a Crisis Bargaining
-##' Game with Incomplete Information.}  \emph{Political Analysis} 11:345--367.
+##' @references Jeffrey B. Lewis and Kenneth A Schultz.  2003.  "Revealing
+##' Preferences: Empirical Estimation of a Crisis Bargaining Game with
+##' Incomplete Information."  \emph{Political Analysis} 11:345--367.
 ##'
-##' Curtis S. Signorino.  2003.  \dQuote{Structure and Uncertainty
-##' in Discrete Choice Models.}  \emph{Political Analysis} 11:316--344.
+##' Curtis S. Signorino.  2003.  "Structure and Uncertainty in Discrete Choice
+##' Models."  \emph{Political Analysis} 11:316--344.
 ##' @author Brenton Kenkel (\email{brenton.kenkel@@gmail.com}) and Curtis
 ##' S. Signorino
 ##' @examples
@@ -413,16 +433,13 @@ makeResponse12 <- function(yf)
 ##' m7 <- egame12(f1, data = war1800, sdformula = ~ balanc - 1)
 ##' summary(m7)
 ##' 
-##' m8 <- egame12(f1, data = war1800, sdformula = ~ balanc | revis2, sdByPlayer = TRUE)
-##' summary(m8)
-##' 
 ##' ## using a factor outcome
 ##' y <- ifelse(war1800$esc == 1, ifelse(war1800$war == 1, "war", "cap"), "sq")
 ##' war1800$y <- as.factor(y)
 ##' f2 <- update(Formula(f1), y ~ .)
 ##' 
-##' m9 <- egame12(f2, data = war1800)
-##' summary(m9)
+##' m8 <- egame12(f2, data = war1800)
+##' summary(m8)
 egame12 <- function(formulas, data, subset, na.action,
                     link = c("probit", "logit"),
                     type = c("agent", "private"),
@@ -433,6 +450,7 @@ egame12 <- function(formulas, data, subset, na.action,
                     boot = 0,
                     bootreport = TRUE,
                     profile,
+                    method = "BFGS",
                     ...)
 {
     cl <- match.call()
@@ -444,7 +462,7 @@ egame12 <- function(formulas, data, subset, na.action,
     ## various sanity checks
     formulas <- checkFormulas(formulas)
     if (is.null(fixedUtils) && length(formulas)[2] != 4)
-        stop("`formulas` should have four components on the right-hand side")
+        stop("'formulas' should have four components on the right-hand side")
 
     if (!is.null(fixedUtils)) {
         if (length(fixedUtils) < 4)
@@ -466,14 +484,14 @@ egame12 <- function(formulas, data, subset, na.action,
     if (!is.null(sdformula)) {
         sdformula <- checkFormulas(sdformula, argname = "sdformula")
         if (sdByPlayer && length(sdformula)[2] != 2)
-            stop("`sdformula` should have two components (one for each player) on the right-hand side when sdByPlayer == TRUE")
+            stop("'sdformula' should have two components (one for each player) on the right-hand side when sdByPlayer == TRUE")
         if (!sdByPlayer && length(sdformula)[2] != 1)
-            stop("`sdformula` should have exactly one component on the right-hand side")
+            stop("'sdformula' should have exactly one component on the right-hand side")
         formulas <- as.Formula(formula(formulas), formula(sdformula))
     }
 
     if (sdByPlayer && is.null(sdformula)) {
-        warning("to estimate SDs by player, you must specify `sdformula` or `fixedUtils`")
+        warning("to estimate SDs by player, you must specify 'sdformula' or 'fixedUtils'")
         sdByPlayer <- FALSE
     }
 
@@ -490,12 +508,13 @@ egame12 <- function(formulas, data, subset, na.action,
     mf[[1]] <- as.name("model.frame")
     mf <- eval(mf, parent.frame())
 
+    ## get the response and store it as factor (yf) and numeric (y)
     yf <- model.part(formulas, mf, lhs = 1, drop = TRUE)
     yf <- makeResponse12(yf)
     y <- as.numeric(yf)
 
-    ## makes a list of the 4 (or 8, if variance formulas specified) matrices of
-    ## regressors to be passed to estimation functions
+    ## makes a list of the 4 (or more, if variance formulas specified) matrices
+    ## of regressors to be passed to estimation functions
     regr <- list()
     for (i in seq_len(length(formulas)[2]))
         regr[[i]] <- model.matrix(formulas, data = mf, rhs = i)
@@ -527,18 +546,19 @@ egame12 <- function(formulas, data, subset, na.action,
              paste(varNames[[1]][idCheck], collapse = ", "))
     }
 
-    ## gives names to starting values
+    ## give names to starting values
     prefixes <- paste(c(rep("u1(", 3), "u2("), c(levels(yf), levels(yf)[3]),
                        ")", sep = "")
     sdterms <- if (!is.null(sdformula)) { if (sdByPlayer) 2L else 1L } else 0L
-    varNames <- makeVarNames(varNames, prefixes, link, sdterms)
+    utils <- if (is.null(fixedUtils)) 1:4 else numeric(0)
+    varNames <- makeVarNames(varNames, prefixes, utils, link, sdterms)
     hasColon <- varNames$hasColon
     names(sval) <- varNames$varNames
 
     ## use the gradient iff no regressors in variance
     gr <- if (is.null(sdformula)) logLikGrad12 else NULL
 
-    ## deals with fixed utilities
+    ## deal with fixed utilities
     fvec <- rep(FALSE, length(sval))
     names(fvec) <- names(sval)
     if (!is.null(fixedUtils)) {
@@ -546,37 +566,45 @@ egame12 <- function(formulas, data, subset, na.action,
         fvec[1:4] <- TRUE
     }
 
-    results <- maxBFGS(fn = logLik12, grad = gr, start = sval, fixed = fvec, y =
-                       y, regr = regr, link = link, type = type, ...)
-    if (results$code) {
-        warning("Model fitting did not converge\nMessage: ",
-                results$message)
+    results <- maxLik(logLik = logLik12, grad = gr, start = sval, fixed = fvec,
+                      method = method, y = y, regr = regr, link = link, type =
+                      type, ...)
+
+    ## some optimization routines in maxLik have different convergence codes for
+    ## success, so we need to retrieve the proper code(s) for the supplied
+    ## method and check against it/them
+    cc <- convergenceCriterion(method)
+    if (!(results$code %in% cc)) {
+        warning("Model fitting did not converge\nCode:", results$code,
+                "\nMessage: ", results$message)
     }
 
     if (boot > 0) {
-        bootMatrix <- gameBoot(boot, report = bootreport, estimate =
-                                results$estimate, y = y, regr = regr, fn =
-                                logLik12, gr = gr, fixed = fvec, link = link,
-                                type = type, ...)
+        bootMatrix <-
+            gameBoot(boot, report = bootreport, estimate = results$estimate, y =
+                     y, regr = regr, fn = logLik12, gr = gr, fixed = fvec,
+                     method = method, link = link, type = type, ...)
     }
 
+    ## create a 'game' object to store output
     ans <- list()
     ans$coefficients <- results$estimate
     ans$vcov <- getGameVcov(results$hessian, fvec)
     ans$log.likelihood <- logLik12(results$estimate, y = y, regr = regr, link =
                                    link, type = type)
     ans$call <- cl
-    ans$convergence <- list(code = results$code, message = results$message,
-                            gradient = !is.null(gr))
+    ans$convergence <- list(method = method, iter = nIter(results), code =
+                            results$code, message = results$message, gradient =
+                            !is.null(gr))
     ans$formulas <- formulas
     ans$link <- link
     ans$type <- type
     ans$model <- mf
+    ans$xlevels <- .getXlevels(attr(mf, "terms"), mf)
     ans$y <- yf
     ans$equations <- names(hasColon)
     attr(ans$equations, "hasColon") <- hasColon
     ans$fixed <- fvec
-
     if (boot > 0)
         ans$boot.matrix <- bootMatrix
     

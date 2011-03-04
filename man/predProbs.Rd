@@ -18,7 +18,7 @@ The procedure works by varying \code{x}, the variable of interest, across
 its observed range (or one specified by the user in \code{xlim}) while
 holding all other independent variables in the model fixed.  The profile
 created by default is as follows (the same defaults as in the \code{sim}
-function in the \code{Zelig} package):
+function in the \pkg{Zelig} package):
 \itemize{
 \item numeric, non-binary variables are fixed at their means
 \item \code{\link{ordered}} variables are fixed at their medians
@@ -50,9 +50,8 @@ function \code{escapeRegex}, written by Charles Dupont.}
 \seealso{\code{\link{predict.game}} for somewhat more flexible (but fussier)
 generation of predicted probabilities.}
 \arguments{\item{model}{a fitted model of class \code{game}.}
-\item{x}{character string giving the name of the variable to place
-\dQuote{on the x-axis} while all others are held constant.  Partial matches
-are accepted.}
+\item{x}{character string giving the name of the variable to place "on the
+x-axis" while all others are held constant.  Partial matches are accepted.}
 \item{xlim}{numeric, length 2: the range that \code{x} should be varied over
 (if \code{x} is continuous).  Defaults to the observed range of \code{x}.}
 \item{n}{integer: the number of observations to generate (if \code{x} is
@@ -64,7 +63,7 @@ for the returned object.  See \code{\link{plot.predProbs}}.}
 \item{report}{logical: whether to print a status bar while obtaining the
 confidence intervals for the predicted probabilities.}
 \item{...}{used to set values for variables other than \code{x} in the
-profile of observations.  See \dQuote{Details} and \dQuote{Examples}.}
+profile of observations.  See "Details" and "Examples".}
 }
 \examples{data(war1800)
 f1 <- esc + war ~ s_wt_re1 + revis1 | 0 | regime1 | balanc + regime2

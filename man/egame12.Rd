@@ -1,13 +1,13 @@
 \name{egame12}
 \alias{egame12}
-\title{Strategic model with 3 terminal nodes}
+\title{Strategic model with 2 players, 3 terminal nodes}
 \usage{egame12(formulas, data, subset, na.action, link=c("probit", "logit"),
     type=c("agent", "private"), startvals=c("sbi", "unif", "zero"),
     fixedUtils, sdformula, sdByPlayer=FALSE, boot=0, bootreport=TRUE,
-    profile, ...)
+    profile, method="BFGS", ...)
 }
-\description{Fits a strategic model with three terminal nodes, as in the game illustrated
-below in \dQuote{Details}.}
+\description{Fits a strategic model with two players and three terminal nodes, as in the
+game illustrated below in "Details".}
 \details{The model corresponds to the following extensive-form game, described in
 Signorino (2003):
 \preformatted{
@@ -76,11 +76,10 @@ interpretation of the scale parameters in these models and how it differs
 between the agent error and private information models, see Signorino
 (2003).
 
-The model is fit with the BFGS method, using the function
-\code{\link{maxBFGS}} from the \pkg{maxLik} package.  For the sake of speed
-and stability, the fitting procedure typically uses the gradient of the
-log-likelihood.  However, if \code{fixedUtils} or \code{sdformula} is
-specified, the gradient is not used.}
+The model is fit using \code{\link{maxLik}}, using the BFGS optimization
+method by default (see \code{link{maxBFGS}}).  Use the \code{method}
+argument to specify an alternative from among those supplied by
+\code{maxLik}.}
 \value{An object of class \code{c("game", "egame12")}. A
 \code{game} object is a list containing: \describe{
 \item{\code{coefficients}}{estimated parameters of the model.}
@@ -90,17 +89,21 @@ contain \code{NA}s.}
 \item{\code{log.likelihood}}{vector of individual log likelihoods (left
 unsummed for use with non-nested model tests).}
 \item{\code{call}}{the call used to produce the model.}
-\item{\code{convergence}}{a list containing the convergence code and message
-returned by \code{\link{maxBFGS}}, and an indicator for whether the
-gradient was used in fitting.}
+\item{\code{convergence}}{a list containing the optimization method used
+(see argument \code{method}), the number of iterations to convergence, the
+convergence code and message returned by \code{\link{maxLik}}, and an
+indicator for whether the (analytic) gradient was used in fitting.}
 \item{\code{formulas}}{the final \code{Formula} object passed to
 \code{model.frame} (including anything specified for the scale parameters).}
 \item{\code{link}}{the specified link function.}
-\item{\code{type}}{the specified stochastic structure.}
-\item{\code{model}}{the model frame containing all variables used in fitting.}
+\item{\code{type}}{the specified stochastic structure (i.e., agent error or
+private information).}
+\item{\code{model}}{the model frame containing all variables used in
+fitting.}
+\item{\code{xlevels}}{a record of the levels of any factor regressors.}
 \item{\code{y}}{the dependent variable, represented as a factor.}
 \item{\code{equations}}{names of each separate equation (e.g.,
-\dQuote{u1(sq)}, \dQuote{u1(cap)}, etc.).}
+"u1(sq)", "u1(cap)", etc.).}
 \item{\code{fixed}}{logical vector specifying which parameter values, if
 any, were fixed in the estimation procedure.}
 \item{\code{boot.matrix}}{if \code{boot} was non-zero, a matrix of bootstrap
@@ -109,17 +112,18 @@ parameter estimates (otherwise \code{NULL}).}
 The second class of the returned object, \code{egame12}, is for use in
 generation of predicted probabilities.}
 \seealso{\code{\link{summary.game}} and \code{\link{predProbs}} for
-postestimation analysis; \code{\link{Formula}} for formula specification.}
-\references{Jeffrey B. Lewis and Kenneth A Schultz.  2003.
-\dQuote{Revealing Preferences: Empirical Estimation of a Crisis Bargaining
-Game with Incomplete Information.}  \emph{Political Analysis} 11:345--367.
+postestimation analysis; \code{\link{makeFormulas}} for formula
+specification.}
+\references{Jeffrey B. Lewis and Kenneth A Schultz.  2003.  "Revealing
+Preferences: Empirical Estimation of a Crisis Bargaining Game with
+Incomplete Information."  \emph{Political Analysis} 11:345--367.
 
-Curtis S. Signorino.  2003.  \dQuote{Structure and Uncertainty
-in Discrete Choice Models.}  \emph{Political Analysis} 11:316--344.}
+Curtis S. Signorino.  2003.  "Structure and Uncertainty in Discrete Choice
+Models."  \emph{Political Analysis} 11:316--344.}
 \author{Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and Curtis
 S. Signorino}
 \arguments{\item{formulas}{a list of four formulas, or a \code{\link{Formula}} object
-with four right-hand sides.  See \dQuote{Details} and the examples below.}
+with four right-hand sides.  See "Details" and the examples below.}
 \item{data}{a data frame containing the variables in the model.}
 \item{subset}{optional logical expression specifying which observations from
 \code{data} to use in fitting.}
@@ -127,12 +131,11 @@ with four right-hand sides.  See \dQuote{Details} and the examples below.}
 the \code{na.action} setting of \code{\link{options}}.  See
 \code{\link{na.omit}}.}
 \item{link}{whether to use a probit (default) or logit link structure,}
-\item{type}{whether to use an agent-error (\dQuote{agent}, default) or
-private-information (\dQuote{private}) stochastic structure.}
+\item{type}{whether to use an agent-error ("agent", default) or
+private-information ("private") stochastic structure.}
 \item{startvals}{whether to calculate starting values for the optimization
-using statistical backwards induction (\dQuote{sbi}, default), draw them
-from a uniform distribution (\dQuote{unif}), or to set them all to 0
-(\dQuote{zero})}
+using statistical backwards induction ("sbi", default), draw them from a
+uniform distribution ("unif"), or to set them all to 0 ("zero")}
 \item{fixedUtils}{numeric vector of values to fix for u11, u13, u14, and u24
 respectively.  \code{NULL} (the default) indicates that these should be
 estimated with regressors rather than fixed.}
@@ -152,8 +155,10 @@ bootstrap iterations.}
 \item{profile}{output from running \code{\link{profile.game}} on a previous
 fit of the model, used to generate starting values for refitting when an
 earlier fit converged to a non-global maximum.}
+\item{method}{character string specifying which optimization routine to use
+(see \code{\link{maxLik}})}
 \item{...}{other arguments to pass to the fitting function (see
-\code{\link{maxBFGS}}).}
+\code{\link{maxLik}}).}
 }
 \examples{data(war1800)
 
@@ -187,14 +192,11 @@ summary(m6)
 m7 <- egame12(f1, data = war1800, sdformula = ~ balanc - 1)
 summary(m7)
 
-m8 <- egame12(f1, data = war1800, sdformula = ~ balanc | revis2, sdByPlayer = TRUE)
-summary(m8)
-
 ## using a factor outcome
 y <- ifelse(war1800$esc == 1, ifelse(war1800$war == 1, "war", "cap"), "sq")
 war1800$y <- as.factor(y)
 f2 <- update(Formula(f1), y ~ .)
 
-m9 <- egame12(f2, data = war1800)
-summary(m9)}
+m8 <- egame12(f2, data = war1800)
+summary(m8)}
 
