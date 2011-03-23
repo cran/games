@@ -2,8 +2,8 @@
 \alias{latexTable}
 \title{LaTeX table for strategic models}
 \usage{latexTable(x, digits=max(3, getOption("digits") - 2), scientific=NA, blankfill="",
-    math.style.negative=TRUE, file="", floatplace="htbp", rowsep=2,
-    useboot=TRUE)
+    math.style.negative=TRUE, file="", floatplace="htbp", caption,
+    label, rowsep=2, useboot=TRUE)
 }
 \description{Makes a LaTeX table of strategic model results.}
 \details{\code{latexTable} prints LaTeX code for the presentation of results from a
@@ -39,6 +39,8 @@ plain hyphens.  Defaults to \code{TRUE}.}
 the table to the R console.}
 \item{floatplace}{where to place the table float; e.g., for
 \code{\\begin\{table\}[htp]}, use \code{floatplace = "htp"}.}
+\item{caption}{caption to use (none if \code{NULL})}
+\item{label}{reference label to use (none if \code{NULL})}
 \item{rowsep}{amount of space (in points) to put between rows.}
 \item{useboot}{logical: use bootstrap estimates (if available) to calculate
 standard errors?}

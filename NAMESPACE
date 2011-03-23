@@ -1,6 +1,6 @@
-export(egame12)
 export(egame122)
 export(egame123)
+export(egame12)
 S3method(print, game)
 export(print.game)
 S3method(summary, game)
