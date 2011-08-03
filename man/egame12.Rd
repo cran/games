@@ -77,7 +77,7 @@ between the agent error and private information models, see Signorino
 (2003).
 
 The model is fit using \code{\link{maxLik}}, using the BFGS optimization
-method by default (see \code{link{maxBFGS}}).  Use the \code{method}
+method by default (see \code{\link{maxBFGS}}).  Use the \code{method}
 argument to specify an alternative from among those supplied by
 \code{maxLik}.}
 \value{An object of class \code{c("game", "egame12")}. A
