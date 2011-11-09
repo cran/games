@@ -194,7 +194,7 @@ summary(m7)
 
 ## using a factor outcome
 y <- ifelse(war1800$esc == 1, ifelse(war1800$war == 1, "war", "cap"), "sq")
-war1800$y <- as.factor(y)
+war1800$y <- factor(y, levels = c("sq", "cap", "war"))
 f2 <- update(Formula(f1), y ~ .)
 
 m8 <- egame12(f2, data = war1800)

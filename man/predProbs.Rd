@@ -1,8 +1,8 @@
 \name{predProbs}
 \alias{predProbs}
 \title{User-friendly predicted probability analysis}
-\usage{predProbs(model, x, xlim=c(min(x), max(x)), n=100, ci=0.95, makePlots=FALSE,
-    report=TRUE, ...)
+\usage{predProbs(model, x, xlim=c(min(x), max(x)), n=100, ci=0.95, type=c("outcome",
+    "action"), makePlots=FALSE, report=TRUE, ...)
 }
 \description{Easy generation and plotting of predicted probabilities from a fitted
 strategic model.}
@@ -58,12 +58,14 @@ x-axis" while all others are held constant.  Partial matches are accepted.}
 continuous).}
 \item{ci}{numeric: width of the confidence interval to estimate around each
 predicted probability.  Set to \code{0} to estimate no confidence intervals.}
+\item{type}{whether to generate predicted values for outcomes (the default)
+or actions}
 \item{makePlots}{logical: whether to automatically make the default plot
 for the returned object.  See \code{\link{plot.predProbs}}.}
 \item{report}{logical: whether to print a status bar while obtaining the
 confidence intervals for the predicted probabilities.}
 \item{...}{used to set values for variables other than \code{x} in the
-profile of observations.  See "Details" and "Examples".}
+of observations.  See "Details" and "Examples".}
 }
 \examples{data(war1800)
 f1 <- esc + war ~ s_wt_re1 + revis1 | 0 | regime1 | balanc + regime2
@@ -85,15 +87,18 @@ pp5 <- predProbs(m1, x = "s_wt_re1", bal = 0.7)  ## error will result}
 ## x can be a factor too
 pp6 <- predProbs(m1, x = "regime1")
 
+## action probabilities
+pp7 <- predProbs(m1, x = "regime1", type = "action")
+
 ## predProbs (despite the name) also provides predictions for the optimal
 ## offer in ultimatum models
 data(data_ult)
 f2 <- offer + accept ~ x1 + x2 + x3 + x4 + w1 + w2 | z1 + z2 + z3 + z4 + w1 + w2
 m2 <- ultimatum(f2, data = data_ult, maxOffer = 15, boot = 10)
-pp7 <- predProbs(m2, x = "w1", n = 5)
-print(pp7)
+pp8 <- predProbs(m2, x = "w1", n = 5)
+print(pp8)
 
 op <- par(mfrow = c(2, 1))
-plot(pp7)
+plot(pp8)
 par(op)}
 
