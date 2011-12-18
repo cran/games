@@ -1,6 +1,6 @@
-653f1d0a6d12e28f6df6687189678f74 *DESCRIPTION
+31acc0ad2e3c86339452b870528caac6 *DESCRIPTION
 1c4b6a4a172423017ac1de4e24158253 *NAMESPACE
-e4f6b874d953cbe09f9b28cd6d558e6c *NEWS
+99bc57380d2f35cbc739aa559c78e86d *NEWS
 e8f547df5e215a5b03705a0b5db35933 *R/doc.r
 4082d7d8464c0a10ee7a1547ac7527c5 *R/egame12.r
 72cff2c37a832af2bf367d089c4d744e *R/egame122.r
@@ -9,7 +9,7 @@ e8f547df5e215a5b03705a0b5db35933 *R/doc.r
 18f71457c32ea39367b378ef4a975efa *R/helpers.r
 bb1058f4b5e964afab36a388875edd7a *R/latexTable.r
 303e8721b5af92ca41f3c9e2b462e0af *R/makeFormulas.r
-c28dc8af02427e221ef275ef8629731f *R/nonnest.r
+f66ca1c40df7de3402aa862b176122aa *R/nonnest.r
 4aa99e020df13d64dc916bece2b39dfa *R/predProbs.r
 d250793961dc4988f582ffef647d9705 *R/profile.r
 bdae40b5e1ca7289d907d1fbb66c268c *R/ultimatum.r
