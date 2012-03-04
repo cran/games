@@ -2,6 +2,8 @@
 ##' @include helpers.r
 NULL
 
+##' Likelihood profiles for fitted strategic models
+##' 
 ##' Calculate profile likelihood to assess convergence of a model.
 ##'
 ##' Likelihood profiling can help determine if a model fit failed to reach a
@@ -20,26 +22,28 @@ NULL
 ##' the fitted model are invalid.  If this occurs, refit the model, passing the
 ##' \code{profile.game} output to the fitting function's \code{profile} argument
 ##' (as in the example below).  The new fit will use the coefficients from the
-##' profile fit with the highest log-likelihood as starting values.  
+##' profile fit with the highest log-likelihood as starting values.
 ##'
 ##' The function is based loosely on \code{\link{profile.glm}} in the \pkg{MASS}
 ##' package.  However, that function focuses on the calculation of exact
 ##' confidence intervals for regression coefficients, whereas this one is for
 ##' diagnosing non-convergence.  Future versions of the \pkg{games} package may
 ##' incorporate the confidence interval functionality as well.
-##' @title Likelihood profiles for fitted strategic models
 ##' @param fitted a fitted model of class \code{game}.
 ##' @param which integer vector giving the indices of the parameters to be
 ##' profiled.  The default is to use all parameters.  Parameters that were held
 ##' fixed in the original fitting are ignored if selected.
 ##' @param steps number of steps to take (in each direction) from the original
 ##' value for each parameter to be profiled.
-##' @param dist number of standard errors the last step should be from the
-##' original parameter value.
+##' @param dist distance the last step should be from the original parameter
+##' value  (in terms of standard errors if \code{use.se} is \code{TRUE};
+##' absolute value otherwise).  Should be a numeric vector of length equal to 1
+##' or \code{length(coef(fitted))}.
+##' @param use.se logical: whether \code{dist} refers to standard errors
 ##' @param report logical: whether to print status bar (for complex models or
 ##' those with many parameters, profiling can be lengthy)
 ##' @param ... other arguments to be passed to the fitting function (see
-##' \code{\link{maxLik}}).
+##'ode{\link{maxLik}}).
 ##' @return A list of data frames, each containing the estimated coefficients
 ##' across the profiled values for a particular parameter.  The first column of
 ##' each data frame is the log-likelihood for the given fits.  The returned
@@ -55,7 +59,7 @@ NULL
 ##' ## a model that does not converge to global max
 ##' f1 <- offer + accept ~ gender1 | gender2
 ##' m1 <- ultimatum(f1, maxOffer = 100, data = student_offers, s2 = 1)
-##' 
+##'
 ##' p1 <- profile(m1)  ## issues warning
 ##' plot(p1)
 ##'
@@ -66,8 +70,8 @@ NULL
 ##'
 ##' logLik(m1)
 ##' logLik(m2)  ## improved
-profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
-                         TRUE, ...)
+profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, use.se =
+                         TRUE, report = TRUE, ...)
 {
     ## get the regressors from the original model
     mf <- match(c("subset", "na.action"), names(fitted$call), 0L)
@@ -93,12 +97,18 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
         y <- as.numeric(fitted$y)  ## use as.numeric() because y is stored as a
                                    ## factor in a game object
     }
-    
+
     fixed <- fitted$fixed
     link <- fitted$link
     type <- fitted$type
     method <- fitted$convergence$method
-    se <- sqrt(diag(fitted$vcov))
+    if (length(dist) == 1L)
+        dist <- rep(dist, length(cf))
+    if (use.se) {
+        se <- sqrt(diag(fitted$vcov))
+    } else {
+        se <- rep(1, length(cf))
+    }
 
     ## special stuff for ultimatum models
     if (inherits(fitted, "ultimatum")) {
@@ -111,6 +121,13 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
         maxOffer <- acc <- offerOnly <- offertol <- NULL
     }
 
+    ## ## Special stuff for egame12cor models
+    ## if (inherits(fitted, "egame12cor")) {
+    ##     gridsize <- fitted$gridsize
+    ## } else {
+    ##     gridsize <- NULL
+    ## }
+
     ## retrieve the appropriate log-likelihood and gradient, based on the type
     ## of model.  this relies on the class attribute of the object being ordered
     ## correctly, which will generally be the case if users don't mess with the
@@ -118,11 +135,13 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
     ## like the "family" attribute of glm objects
     logLik <- switch(class(fitted)[2],
                      egame12 = logLik12,
+                     ## egame12cor = logLik12cor,
                      egame122 = logLik122,
                      egame123 = logLik123,
                      ultimatum = logLikUlt)
     logLikGrad <- switch(class(fitted)[2],
                          egame12 = logLikGrad12,
+                         ## egame12cor = NULL,
                          egame122 = logLikGrad122,
                          egame123 = logLikGrad123,
                          ultimatum = logLikGradUlt)
@@ -152,7 +171,7 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
         thisAns <- matrix(nrow = 2*steps, ncol = length(cf) + 1)
         thisAns <- data.frame(thisAns)
         names(thisAns) <- c("logLik", names(cf))
-        cfvals <- seq(cf[i] - dist*se[i], cf[i] + dist*se[i], length.out =
+        cfvals <- seq(cf[i] - dist[i]*se[i], cf[i] + dist[i]*se[i], length.out =
                       2*steps + 1)
         cfvals <- cfvals[-(steps + 1)]  # prevent refitting from original
                                         # coefficients (causes the
@@ -167,19 +186,25 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
             sval <- cf
             sval[i] <- cfvals[j]
             results <-
-                maxLik(logLik = logLik, grad = logLikGrad, start = sval, fixed =
-                       fvec, method = method, y = y, regr = regr, link = link,
-                       type = type, acc = acc, maxOffer = maxOffer, offerOnly =
-                       offerOnly, offertol = offertol, ...)
-            thisAns[j, ] <- c(results$max, results$estimate)
-            
+                tryCatch(maxLik(logLik = logLik, grad = logLikGrad, start =
+                                sval, fixed = fvec, method = method, y = y, regr
+                                = regr, link = link, type = type, acc = acc,
+                                maxOffer = maxOffer, offerOnly = offerOnly,
+                                offertol = offertol, ...),
+                         error = identity)
+            if (inherits(results, "error")) {
+                thisAns[j, ] <- NA
+            } else {
+                thisAns[j, ] <- c(results$max, results$estimate)
+            }
+
             k <- k + 1
             setTxtProgressBar(pb, k)
         }
 
         ## check if any of the profiled fits yield a log-likelihood higher than
         ## that of the the original fitted model
-        if (any(thisAns[, 1] > sum(fitted$log.likelihood)))
+        if (isTRUE(any(thisAns[, 1] > sum(fitted$log.likelihood))))
             didNotConverge <- TRUE
         ans[[names(cf)[i]]] <- thisAns
 
@@ -195,6 +220,8 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
     return(ans)
 }
 
+##' Plot profiles of strategic model log-likelihoods
+##' 
 ##' Plot output of \code{\link{profile.game}}.
 ##'
 ##' This method provides plots for a quick assessment of whether \code{game}
@@ -208,7 +235,6 @@ profile.game <- function(fitted, which = 1:p, steps = 5, dist = 3, report =
 ##' non-covergence warning.  This is an artifact of the interpolation, which can
 ##' be confirmed by re-running \code{plot.profile.game} with the argument
 ##' \code{show.pts = TRUE}.
-##' @title Plot profiles of strategic model log-likelihoods
 ##' @param x an object of class \code{profile.game}, typically created by
 ##' running \code{\link{profile.game}} on a fitted \code{game} model
 ##' @param show.pts logical: plot a point for the log-likelihood of each
@@ -242,10 +268,10 @@ plot.profile.game <- function(x, show.pts = FALSE, ...)
         ## make sure interpolation passes through original fit
         xvals <- c(xvals, origcf[nam])
         yvals <- c(yvals, origll)
-        
+
         splineVals <- spline(xvals, yvals)
         ylim <- c(min(yvals, splineVals$y), max(yvals, splineVals$y))
-        
+
         plot(xvals, yvals, xlab = nam, ylab = "log-likelihood", type = "n",
              ylim = ylim)
 

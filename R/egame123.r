@@ -320,6 +320,8 @@ makeResponse123 <- function(yf)
     return(yf)
 }
 
+##' Strategic model with 3 players, 4 terminal nodes
+##' 
 ##' Fits a strategic model with three players and four terminal nodes, as in the
 ##' game illustrated below in "Details".
 ##'
@@ -357,7 +359,6 @@ makeResponse123 <- function(yf)
 ##' and \code{y3} (where the game ended before the move could be made) should be
 ##' set to \code{0}, \strong{not} \code{NA}, to ensure that observations are not
 ##' dropped when \code{na.action = na.omit}.}
-##' @title Strategic model with 3 players, 4 terminal nodes
 ##' @param formulas a list of eight formulas, or a \code{\link{Formula}} object
 ##' with eight right-hand sides.  See "Details" and "Examples".
 ##' @param data a data frame.
@@ -546,6 +547,11 @@ egame123 <- function(formulas, data, subset, na.action,
                 "\nMessage: ", results$message)
     }
 
+    ## check local identification
+    lid <- checkLocalID(results$hessian, fvec)
+    if (!lid)
+        warning("Hessian is not negative definite; coefficients may not be locally identified")
+
     if (boot > 0) {
         bootMatrix <-
             gameBoot(boot, report = bootreport, estimate = results$estimate, y =
@@ -573,6 +579,7 @@ egame123 <- function(formulas, data, subset, na.action,
     ans$fixed <- fvec
     if (boot > 0)
         ans$boot.matrix <- bootMatrix
+    ans$localID <- lid
 
     class(ans) <- c("game", "egame123")
 

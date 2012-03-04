@@ -250,6 +250,8 @@ makeResponse12 <- function(yf)
     return(yf)
 }
 
+##' Strategic model with 2 players, 3 terminal nodes
+##' 
 ##' Fits a strategic model with two players and three terminal nodes, as in the
 ##' game illustrated below in "Details".
 ##'
@@ -325,7 +327,6 @@ makeResponse12 <- function(yf)
 ##' method by default (see \code{\link{maxBFGS}}).  Use the \code{method}
 ##' argument to specify an alternative from among those supplied by
 ##' \code{maxLik}.
-##' @title Strategic model with 2 players, 3 terminal nodes
 ##' @param formulas a list of four formulas, or a \code{\link{Formula}} object
 ##' with four right-hand sides.  See "Details" and the examples below.
 ##' @param data a data frame containing the variables in the model.
@@ -391,6 +392,9 @@ makeResponse12 <- function(yf)
 ##' any, were fixed in the estimation procedure.}
 ##' \item{\code{boot.matrix}}{if \code{boot} was non-zero, a matrix of bootstrap
 ##' parameter estimates (otherwise \code{NULL}).}
+##' \item{\code{localID}}{an indicator for whether the Hessian matrix is
+##' negative definite, a sufficient condition for local identification of the
+##' model parameters.}
 ##' }
 ##' The second class of the returned object, \code{egame12}, is for use in
 ##' generation of predicted probabilities.
@@ -585,6 +589,11 @@ egame12 <- function(formulas, data, subset, na.action,
                 "\nMessage: ", results$message)
     }
 
+    ## check local identification
+    lid <- checkLocalID(results$hessian, fvec)
+    if (!lid)
+        warning("Hessian is not negative definite; coefficients may not be locally identified")
+
     if (boot > 0) {
         bootMatrix <-
             gameBoot(boot, report = bootreport, estimate = results$estimate, y =
@@ -613,6 +622,7 @@ egame12 <- function(formulas, data, subset, na.action,
     ans$fixed <- fvec
     if (boot > 0)
         ans$boot.matrix <- bootMatrix
+    ans$localID <- lid
     
     class(ans) <- c("game", "egame12")
     

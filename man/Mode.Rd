@@ -1,18 +1,28 @@
 \name{Mode}
 \alias{Mode}
 \title{Mode of a vector}
-\usage{Mode(x, na.rm=FALSE)
+\usage{
+  Mode(x, na.rm = FALSE)
 }
-\description{Finds the modal value of a vector of any class.}
-\details{Based on code from the R wiki:
-\url{http://rwiki.sciviews.org/doku.php?id=tips:stats-basic:modalvalue}.}
-\value{The value of \code{x} that occurs most often.  If there is a tie,
-the one that appears first (among those tied) is chosen.}
-\author{R Wiki contributors}
-\arguments{\item{x}{a vector (lists and arrays will be flattened).}
-\item{na.rm}{logical: strip \code{NA} values?}
+\arguments{
+  \item{x}{a vector (lists and arrays will be flattened).}
+
+  \item{na.rm}{logical: strip \code{NA} values?}
 }
-\examples{x <- c(1, 3, 3, 4)
+\value{
+  The value of \code{x} that occurs most often.  If there
+  is a tie, the one that appears first (among those tied)
+  is chosen.
+}
+\description{
+  Finds the modal value of a vector of any class.
+}
+\details{
+  Based on code from the R wiki:
+  \url{http://rwiki.sciviews.org/doku.php?id=tips:stats-basic:modalvalue}.
+}
+\examples{
+x <- c(1, 3, 3, 4)
 Mode(x)  # 3
 x.char <- letters[x]
 Mode(x.char)  # "c"
@@ -25,5 +35,9 @@ Mode(x.logical)  # FALSE
 y <- c(3, 3, 1, 1, 2)
 Mode(y)  # 3
 z <- c(2, 1, 1, 3, 3)
-Mode(z)  # 1}
+Mode(z)  # 1
+}
+\author{
+  R Wiki contributors
+}
 
