@@ -2,7 +2,8 @@
 \alias{ultimatum}
 \title{Statistical ultimatum game}
 \usage{
-  ultimatum(formulas, data, subset, na.action, maxOffer,
+  ultimatum(formulas, data, subset, na.action,
+    minOffer = 0, maxOffer,
     offertol = sqrt(.Machine$double.eps), s1 = NULL,
     s2 = NULL, outcome = c("both", "offer"), boot = 0,
     bootreport = TRUE, profile, method = "BFGS", ...,
@@ -23,14 +24,17 @@
   \code{data}.  Defaults to the \code{na.action} setting of
   \code{\link{options}}.  See \code{\link{na.omit}}.}
 
+  \item{minOffer}{numeric: the lowest offer Player 1 could
+  feasibly make (default 0).}
+
   \item{maxOffer}{numeric: the highest offer Player 1 could
   feasibly make.}
 
   \item{offertol}{numeric: offers within \code{offertol} of
-  \code{maxOffer} will be considered to be at the maximum.
-  If \code{maxOffer} and all observed offers are
-  integer-valued, the value of \code{offertol} should not
-  matter.}
+  \code{minOffer}/\code{maxOffer} will be considered to be
+  at the minimum/maximum.  (This is used to prevent
+  floating-point problems and need not be changed in most
+  applications.)}
 
   \item{s1}{numeric: scale parameter for Player 1.  If
   \code{NULL} (the default), the parameter will be
@@ -82,18 +86,18 @@
   The model corresponds to the following extensive-form
   game, described in Ramsay and Signorino (2009):
   \preformatted{
-    .       1
-    .      / \
-    .     /   \
-    .    /     \ y in [0, Q]
-    .   /       \
-    .   ---------
-    .       /\  2
-    .      /  \
-    .     /    \
-    .    /      \
-    . Q - y     R1
-    . y         R2}
+.       1
+.      / \
+.     /   \
+.    /     \ y in [0, Q]
+.   /       \
+.   ---------
+.       /\  2
+.      /  \
+.     /    \
+.    /      \
+. Q - y     R1
+. y         R2}
   Q refers to the maximum feasible offer (the
   argument \code{maxOffer}).
 

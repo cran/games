@@ -15,7 +15,7 @@
     \method{predict}{egame123}(object, newdata,
     type=c("outcome", "action"), na.action = na.pass, ...)
     \method{predict}{ultimatum}(object, newdata, na.action
-    = na.pass, ...)
+    = na.pass, n.sim = 1000, ...)
 }
 \arguments{
   \item{object}{a fitted model of class \code{game}.}
@@ -31,6 +31,9 @@
   \item{na.action}{how to deal with \code{NA}s in
   \code{newdata}}
 
+  \item{n.sim}{number of simulation draws to use per
+  observation for \code{ultimatum} models (see Details).}
+
   \item{...}{other arguments, currently ignored.}
 }
 \value{
@@ -41,12 +44,21 @@
 }
 \details{
   This method uses a fitted strategic model to make
-  predictions for a new set of data.  Useful for
-  cross-validating or for graphical analysis.
-
-  For many uses, such as analyzing the marginal effect of a
+  predictions for a new set of data.  This is useful for
+  cross-validating or for graphical analysis.  For many
+  uses, such as analyzing the marginal effect of a
   particular independent variable, the function
   \code{\link{predProbs}} will be more convenient.
+
+  In the \code{\link{ultimatum}} model, there is not an
+  analytic expression for the expected value of Player 1's
+  offer.  Therefore, predicted values are instead
+  generating via simulation by drawing errors from a
+  logistic distribution.  The number of draws per
+  observation can be controlled via the \code{n.sim}
+  argument.  For replicability, we recommend seeding the
+  random number generator via \code{\link{set.seed}} before
+  using \code{predict.ultimatum}.
 }
 \author{
   Brenton Kenkel (\email{brenton.kenkel@gmail.com})

@@ -122,15 +122,15 @@
   The model corresponds to the following extensive-form
   game, described in Signorino (2003):
   \preformatted{
-    .     1
-    .     /\
-    .    /  \
-    .   /    \ 2
-    .  u11   /\
-    .       /  \
-    .      /    \
-    .    u13    u14
-    .    0      u24}
+.     1
+.     /\
+.    /  \
+.   /    \ 2
+.  u11   /\
+.       /  \
+.      /    \
+.    u13    u14
+.    0      u24}
 
   If Player 1 chooses L, the game ends and Player 1
   receives payoffs of u11. (Player 2's utilities in this

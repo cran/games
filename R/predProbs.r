@@ -237,7 +237,7 @@ CIfromBoot <- function(x, newdata, ci = .95, type, report = TRUE)
 ##' @param report logical: whether to print a status bar while obtaining the
 ##' confidence intervals for the predicted probabilities.
 ##' @param ... used to set values for variables other than \code{x} in the
-##'ofile of observations.  See "Details" and "Examples".
+##' profile of observations.  See "Details" and "Examples".
 ##' @return An object of class \code{predProbs}.  This is a data frame containing
 ##' each hypothetical observation's predicted probability, the upper and lower
 ##' bounds of the confidence interval, and the value of each regressor.

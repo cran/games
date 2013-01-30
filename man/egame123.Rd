@@ -83,20 +83,20 @@
   The model corresponds to the following extensive-form
   game:
   \preformatted{
-    .     1
-    .     /\
-    .    /  \
-    .   /    \ 2
-    .  u11   /\
-    .       /  \
-    .      /    \
-    .    u13     \ 3
-    .    u23     /\
-    .           /  \
-    .          /    \
-    .         u15   u16
-    .         u25   u26
-    .         0     u36}
+.     1
+.     /\
+.    /  \
+.   /    \ 2
+.  u11   /\
+.       /  \
+.      /    \
+.    u13     \ 3
+.    u23     /\
+.           /  \
+.          /    \
+.         u15   u16
+.         u25   u26
+.         0     u36}
 
   For additional details on any of the function arguments
   or options, see \code{\link{egame12}}.  The only

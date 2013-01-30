@@ -56,13 +56,14 @@
   this case, run \code{makeFormulas(egame122, outcomes =
   c("budget cuts passed", "budget cuts vetoed", "budget
   increase passed", "budget increase vetoed"))}. The first
-  set of options that appears is
+  set of options that appears is 
   \preformatted{Equation for player 1's utility from budget cuts passed: 
 
-    1: fix to 0
-    2: intercept only
-    3: regressors, no intercept
-    4: regressors with intercept}
+1: fix to 0
+2: intercept only
+3: regressors, no intercept
+4: regressors with intercept}
+
   To specify this utility as
   a function of a constant, the legislature's party, and
   GDP growth, select option \code{4} and enter

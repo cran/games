@@ -36,8 +36,8 @@
   predicted probabilities.}
 
   \item{...}{used to set values for variables other than
-  \code{x} in the ofile of observations.  See "Details" and
-  "Examples".}
+  \code{x} in the profile of observations.  See "Details"
+  and "Examples".}
 }
 \value{
   An object of class \code{predProbs}.  This is a data
