@@ -2,8 +2,7 @@
 \alias{plot.predProbs}
 \title{Plot predicted probabilities}
 \usage{
-  \method{plot}{predProbs} (x, which = NULL, ask = FALSE,
-    ...)
+\method{plot}{predProbs}(x, which = NULL, ask = FALSE, ...)
 }
 \arguments{
   \item{x}{an object of class \code{predProbs} (i.e., a
@@ -23,29 +22,24 @@
   \code{\link{bxp}} (when it is discrete).}
 }
 \value{
-  an object of class \code{preplot.predProbs}, invisibly.
-  This contains the raw information used by lower-level
-  plotting functions.
+an object of class \code{preplot.predProbs}, invisibly.  This contains
+the raw information used by lower-level plotting functions.
 }
 \description{
-  Plots predicted probabilities and associated confidence
-  bands, using the data returned from a call to
-  \code{\link{predProbs}}.
+Plots predicted probabilities and associated confidence bands, using the
+data returned from a call to \code{\link{predProbs}}.
 }
 \details{
-  Most \code{predProbs} objects will be associated with
-  multiple plots: one for each outcome in the estimated
-  model.  These are the three or four terminal nodes for a
-  \code{\link{egame12}} or \code{\link{egame122}} model
-  respectively; for an \code{\link{ultimatum}} model, these
-  are the expected offer and the probability of acceptance.
-  By default, \code{plot.predProbs} produces plots for all
-  of them, so only the last will be visible unless the
-  graphics device is set to have multiple figures (e.g., by
-  setting \code{par(mfrow = ...)}).  The argument
-  \code{ask} displays a menu to select among the possible
-  plots for a given object, and \code{which} allows for
-  this to be done non-interactively.
+Most \code{predProbs} objects will be associated with multiple plots: one for
+each outcome in the estimated model.  These are the three or four terminal
+nodes for a \code{\link{egame12}} or \code{\link{egame122}} model
+respectively; for an \code{\link{ultimatum}} model, these are the expected
+offer and the probability of acceptance.  By default, \code{plot.predProbs}
+produces plots for all of them, so only the last will be visible unless the
+graphics device is set to have multiple figures (e.g., by setting
+\code{par(mfrow = ...)}).  The argument \code{ask} displays a menu to select
+among the possible plots for a given object, and \code{which} allows for
+this to be done non-interactively.
 }
 \examples{
 data(war1800)
@@ -78,6 +72,6 @@ plot(pp1, which = 3, xlab = "Capabilities", ylab = "Probability", main = "Title"
 plot(pp2, which = 3)
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 

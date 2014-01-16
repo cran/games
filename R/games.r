@@ -5,8 +5,30 @@
 ##' @section Acknowledgements: We thank the Wallis Institute of Political
 ##' Economy for financial support.
 ##' @references
+##' Brenton Kenkel and Curtis S. Signorino.  2014.  "Estimating Extensive Form
+##' Games in R."  \emph{Journal of Statistical Software} 56(8):1--27.
+##' 
 ##' Curtis S. Signorino.  2003.  "Structure and Uncertainty
 ##' in Discrete Choice Models."  \emph{Political Analysis} 11:316--344.
+##' @import stringr
+##' @import Formula
+##' @import maxLik
+##' @import MASS
+##' @export predict.egame12
+##' @export predict.egame122
+##' @export predict.egame123
+##' @export predict.ultimatum
+##' @export clarke
+##' @S3method logLik game
+##' @S3method logLik summary.game
+##' @S3method coef game
+##' @S3method vcov game
+##' @S3method plot preplot.predProbs
+##' @S3method predict egame12
+##' @S3method predict egame122
+##' @S3method predict egame123
+##' @S3method predict ultimatum
+##' @S3method print nonnest.test
 NULL
 
 ##' Print a strategic model object

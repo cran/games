@@ -3,11 +3,10 @@
 \alias{vuong}
 \title{Non-nested model tests}
 \usage{
-  vuong(model1, model2, outcome1=NULL, outcome2=NULL,
-    level=0.05, digits=2)
+vuong(model1, model2, outcome1=NULL, outcome2=NULL, level=0.05,
+digits=2)
 
-  clarke(model1, model2, outcome1=NULL, outcome2=NULL,
-    level=0.05, digits=2)
+clarke(model1, model2, outcome1=NULL, outcome2=NULL, level=0.05, digits=2)
 }
 \arguments{
   \item{model1}{A fitted statistical model of class
@@ -35,69 +34,60 @@
   \item{digits}{Integer: number of digits to print}
 }
 \value{
-  Typical use will be to run the function interactively and
-  examine the printed output.  The functions return an
-  object of class \code{"nonnest.test"}, which is a list
-  containing: \describe{ \item{\code{stat}}{The test
-  statistic} \item{\code{test}}{The type of test
-  (\code{"vuong"} or \code{"clarke"})}
-  \item{\code{level}}{Significance level for the test}
-  \item{\code{digits}}{Number of digits to print}
-  \item{\code{loglik1}}{Vector of observationwise
-  log-likelihoods for \code{model1}}
-  \item{\code{loglik2}}{Vector of observationwise
-  log-likelihoods for \code{model2}}
-  \item{\code{nparams}}{Integer vector containing the
-  number of parameters fitted in \code{model1} and
-  \code{model2} respectively} \item{\code{nobs}}{Number of
-  observations of the dependent variable being modeled}}
+Typical use will be to run the function interactively and examine
+the printed output.  The functions return an object of class
+\code{"nonnest.test"}, which is a list containing: \describe{
+\item{\code{stat}}{The test statistic}
+\item{\code{test}}{The type of test (\code{"vuong"} or \code{"clarke"})}
+\item{\code{level}}{Significance level for the test}
+\item{\code{digits}}{Number of digits to print}
+\item{\code{loglik1}}{Vector of observationwise log-likelihoods for
+\code{model1}}
+\item{\code{loglik2}}{Vector of observationwise log-likelihoods for
+\code{model2}}
+\item{\code{nparams}}{Integer vector containing the number of parameters
+fitted in \code{model1} and \code{model2} respectively}
+\item{\code{nobs}}{Number of observations of the dependent variable being
+modeled}}
 }
 \description{
-  Perform Vuong's (1989) or Clarke's (2007) test for
-  non-nested model selection.
+Perform Vuong's (1989) or Clarke's (2007) test for non-nested model
+selection.
 }
 \details{
-  These tests are for comparing two statistical models that
-  have the same dependent variable, where neither model can
-  be expressed as a special case of the other (i.e., they
-  are non-nested).  The null hypothesis is that the
-  estimated models are the same Kullback-Leibler distance
-  from the true model.  To adjust for potential differences
-  in the dimensionality of the models, the test statistic
-  for both \code{vuong} and \code{clarke} is corrected
-  using the Bayesian information criterion (see Clarke 2007
-  for details).
+These tests are for comparing two statistical models that have the same
+dependent variable, where neither model can be expressed as a special case
+of the other (i.e., they are non-nested).  The null hypothesis is that the
+estimated models are the same Kullback-Leibler distance from the true
+model.  To adjust for potential differences in the dimensionality of the
+models, the test statistic for both \code{vuong} and \code{clarke} is
+corrected using the Bayesian information criterion (see Clarke 2007 for
+details).
 
-  It is crucial that the dependent variable be exactly the
-  same between the two models being tested, including the
-  order the observations are placed in. The \code{vuong}
-  and \code{clarke} functions check for such discrepancies,
-  and stop with an error if any is found.  Models with
-  non-null \code{weights} are not yet supported.
+It is crucial that the dependent variable be exactly the same between the
+two models being tested, including the order the observations are placed in.
+The \code{vuong} and \code{clarke} functions check for such discrepancies,
+and stop with an error if any is found.  Models with non-null \code{weights}
+are not yet supported.
 
-  When comparing a strategic model to a (generalized)
-  linear model, you must take care to ensure that the
-  dependent variable is truly the same between models.
-  This is where the \code{outcome} arguments come into
-  play.  For example, in an \code{\link{ultimatum}} model
-  where acceptance is observed, the dependent variable for
-  each observation is the vector consisting of the offer
-  size and an indicator for whether it was accepted.  This
-  is not the same as the dependent variable in a
-  least-squares regression of offer size, which is a scalar
-  for each observation.  Therefore, for a proper comparison
-  of \code{model1} of class {"ultimatum"} and \code{model2}
-  of class \code{"lm"}, it is necessary to specify
-  \code{outcome1 = "offer"}. Similarly, consider an
-  \code{\link{egame12}} model on the \code{\link{war1800}}
-  data, where player 1 chooses whether to escalate the
-  crisis and player 2 chooses whether to go to war.  The
-  dependent variable for each observation in this model is
-  the vector of each player's choice. By contrast, in a
-  logistic regression where the dependent variable is
-  whether war occurs, the dependent variable for each
-  observation is a scalar.  To compare these models, it is
-  necessary to specify \code{outcome1 = 3}.
+When comparing a strategic model to a (generalized) linear model, you must
+take care to ensure that the dependent variable is truly the same between
+models.  This is where the \code{outcome} arguments come into play.  For
+example, in an \code{\link{ultimatum}} model where acceptance is observed,
+the dependent variable for each observation is the vector consisting of the
+offer size and an indicator for whether it was accepted.  This is not the
+same as the dependent variable in a least-squares regression of offer size,
+which is a scalar for each observation.  Therefore, for a proper comparison
+of \code{model1} of class {"ultimatum"} and \code{model2} of class
+\code{"lm"}, it is necessary to specify \code{outcome1 = "offer"}.
+Similarly, consider an \code{\link{egame12}} model on the
+\code{\link{war1800}} data, where player 1 chooses whether to escalate the
+crisis and player 2 chooses whether to go to war.  The dependent variable
+for each observation in this model is the vector of each player's choice.
+By contrast, in a logistic regression where the dependent variable is
+whether war occurs, the dependent variable for each observation is a
+scalar.  To compare these models, it is necessary to specify \code{outcome1
+= 3}.
 }
 \examples{
 data(war1800)
@@ -132,15 +122,13 @@ vuong(model1 = m3, outcome1 = "offer", model2 = ols1)
 clarke(model1 = m3, outcome1 = "offer", model2 = ols1)
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 \references{
-  Quang H. Vuong.  1989.  "Likelihood Ratio Tests for Model
-  Selection and Non-Nested Hypotheses."
-  \emph{Econometrica} 57(2): 307--333.
+Quang H. Vuong.  1989.  "Likelihood Ratio Tests for Model
+Selection and Non-Nested Hypotheses."  \emph{Econometrica} 57(2): 307--333.
 
-  Kevin Clarke.  2007.  "A Simple Distribution-Free Test
-  for Nonnested Hypotheses."  \emph{Political Analysis}
-  15(3): 347--363.
+Kevin Clarke.  2007.  "A Simple Distribution-Free Test for Nonnested
+Hypotheses."  \emph{Political Analysis} 15(3): 347--363.
 }
 

@@ -2,13 +2,10 @@
 \alias{egame123}
 \title{Strategic model with 3 players, 4 terminal nodes}
 \usage{
-  egame123(formulas, data, subset, na.action,
-    link = c("probit", "logit"),
-    type = c("agent", "private"),
-    startvals = c("sbi", "unif", "zero"),
-    fixedUtils = NULL, sdformula = NULL,
-    sdByPlayer = FALSE, boot = 0, bootreport = TRUE,
-    profile, method = "BFGS", ...)
+egame123(formulas, data, subset, na.action, link = c("probit", "logit"),
+  type = c("agent", "private"), startvals = c("sbi", "unif", "zero"),
+  fixedUtils = NULL, sdformula = NULL, sdByPlayer = FALSE, boot = 0,
+  bootreport = TRUE, profile, method = "BFGS", ...)
 }
 \arguments{
   \item{formulas}{a list of eight formulas, or a
@@ -70,19 +67,16 @@
   function (see ode{\link{maxLik}}).}
 }
 \value{
-  An object of class \code{c("game", "egame123")}.  See
-  \code{\link{egame12}} for a description of the
-  \code{game} class.
+An object of class \code{c("game", "egame123")}.  See
+\code{\link{egame12}} for a description of the \code{game} class.
 }
 \description{
-  Fits a strategic model with three players and four
-  terminal nodes, as in the game illustrated below in
-  "Details".
+Fits a strategic model with three players and four terminal nodes, as in the
+game illustrated below in "Details".
 }
 \details{
-  The model corresponds to the following extensive-form
-  game:
-  \preformatted{
+The model corresponds to the following extensive-form game:
+\preformatted{
 .     1
 .     /\
 .    /  \
@@ -98,26 +92,23 @@
 .         u25   u26
 .         0     u36}
 
-  For additional details on any of the function arguments
-  or options, see \code{\link{egame12}}.  The only
-  difference is that the right-hand side of \code{formulas}
-  must have eight components (rather than four) in this
-  case.
+For additional details on any of the function arguments or options, see
+\code{\link{egame12}}.  The only difference is that the right-hand side of
+\code{formulas} must have eight components (rather than four) in this case.
 
-  Ways to specify the dependent variable in
-  \code{egame123}: \itemize{ \item Numeric vector \code{y}
-  containing 4 unique values, corresponding to the outcomes
-  (in order from left to right) as labeled in the game tree
-  above. \item Factor \code{y}, where \code{y} has four
-  levels, corresponding in order to the outcomes as labeled
-  above. \item Indicator variables \code{y1 + y2 + y3},
-  where \code{y1} indicates whether Player 1 moves left or
-  right, \code{y2} indicates Player 2's move, and \code{y3}
-  indicates Player 3's move.  Non-observed values of
-  \code{y2} and \code{y3} (where the game ended before the
-  move could be made) should be set to \code{0},
-  \strong{not} \code{NA}, to ensure that observations are
-  not dropped when \code{na.action = na.omit}.}
+Ways to specify the dependent variable in \code{egame123}:
+\itemize{
+\item Numeric vector \code{y} containing 4 unique values, corresponding to
+the outcomes (in order from left to right) as labeled in the game tree
+above.
+\item Factor \code{y}, where \code{y} has four levels, corresponding in
+order to the outcomes as labeled above.
+\item Indicator variables \code{y1 + y2 + y3}, where \code{y1} indicates
+whether Player 1 moves left or right, \code{y2} indicates Player 2's move,
+and \code{y3} indicates Player 3's move.  Non-observed values of \code{y2}
+and \code{y3} (where the game ended before the move could be made) should be
+set to \code{0}, \strong{not} \code{NA}, to ensure that observations are not
+dropped when \code{na.action = na.omit}.}
 }
 \examples{
 data(data_123)
@@ -136,6 +127,6 @@ m2 <- egame123(f2, data = data_123, link = "probit", type = "private")
 summary(m2)
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 

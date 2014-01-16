@@ -2,11 +2,10 @@
 \alias{latexTable}
 \title{LaTeX table for strategic models}
 \usage{
-  latexTable(x, digits = max(3, getOption("digits") - 2),
-    scientific = NA, blankfill = "",
-    math.style.negative = TRUE, file = "",
-    floatplace = "htbp", caption = NULL, label = NULL,
-    rowsep = 2, useboot = TRUE)
+latexTable(x, digits = max(3, getOption("digits") - 2), scientific = NA,
+  blankfill = "", math.style.negative = TRUE, file = "",
+  floatplace = "htbp", caption = NULL, label = NULL, rowsep = 2,
+  useboot = TRUE)
 }
 \arguments{
   \item{x}{a fitted model of class \code{game}.}
@@ -42,32 +41,28 @@
   available) to calculate standard errors?}
 }
 \value{
-  \code{x}, invisibly.
+\code{x}, invisibly.
 }
 \description{
-  Makes a LaTeX table of strategic model results.
+Makes a LaTeX table of strategic model results.
 }
 \details{
-  \code{latexTable} prints LaTeX code for the presentation
-  of results from a strategic model.  Each row contains one
-  regressor, and each column contains one of the utility
-  (or variance term) equations in the model.  For example,
-  in a model fit with \code{\link{egame12}}, the four
-  columns will be u11, u13, u14, and u24 respectively.
-  Each cell contains the estimated parameter, atop its
-  standard error in parentheses.  Cells that are empty
-  because a regressor is not included in a particular
-  equation are filled with the string specified in the
-  option \code{blankfill}.  Signorino and Tarar (2006, p.
-  593) contains a table of this variety.
+\code{latexTable} prints LaTeX code for the presentation of results from a
+strategic model.  Each row contains one regressor, and each column contains
+one of the utility (or variance term) equations in the model.  For example,
+in a model fit with \code{\link{egame12}}, the four columns will be u11,
+u13, u14, and u24 respectively.  Each cell contains the estimated parameter,
+atop its standard error in parentheses.  Cells that are empty because a
+regressor is not included in a particular equation are filled with the
+string specified in the option \code{blankfill}.  Signorino and Tarar (2006,
+p. 593) contains a table of this variety.
 
-  The table generated depends on the \pkg{multirow} package
-  for LaTeX, so make sure to include
-  \code{\\usepackage{multirow}} in the preamble of your
-  document.
+The table generated depends on the \pkg{multirow} package for LaTeX, so
+make sure to include \code{\\usepackage{multirow}} in the preamble of your
+document.
 
-  The \code{digits} option does not yet work seamlessly;
-  you may have to resort to trial and error.
+The \code{digits} option does not yet work seamlessly; you may have to
+resort to trial and error.
 }
 \examples{
 data(war1800)
@@ -82,12 +77,11 @@ latexTable(m1, blankfill = "--")  ## dashes in blank cells
 latexTable(m1, file = "my_table.tex")  ## write to file}
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 \references{
-  Curtis S. Signorino and Ahmer Tarar.  2006.  "A Unified
-  Theory and Test of Extended Immediate Deterrence."
-  \emph{American Journal of Political Science}
-  50(3):586--605.
+Curtis S. Signorino and Ahmer Tarar.  2006.  "A Unified Theory
+and Test of Extended Immediate Deterrence."  \emph{American Journal of
+Political Science} 50(3):586--605.
 }
 

@@ -2,13 +2,10 @@
 \alias{egame122}
 \title{Strategic model with 2 players, 4 terminal nodes}
 \usage{
-  egame122(formulas, data, subset, na.action,
-    link = c("probit", "logit"),
-    type = c("agent", "private"),
-    startvals = c("sbi", "unif", "zero"),
-    fixedUtils = NULL, sdformula = NULL,
-    sdByPlayer = FALSE, boot = 0, bootreport = TRUE,
-    profile, method = "BFGS", ...)
+egame122(formulas, data, subset, na.action, link = c("probit", "logit"),
+  type = c("agent", "private"), startvals = c("sbi", "unif", "zero"),
+  fixedUtils = NULL, sdformula = NULL, sdByPlayer = FALSE, boot = 0,
+  bootreport = TRUE, profile, method = "BFGS", ...)
 }
 \arguments{
   \item{formulas}{a list of six formulas, or a
@@ -70,18 +67,16 @@
   function (see \code{\link{maxLik}}).}
 }
 \value{
-  An object of class \code{c("game", "egame122")}.  See
-  \code{\link{egame12}} for a description of the
-  \code{game} class.
+An object of class \code{c("game", "egame122")}.  See
+\code{\link{egame12}} for a description of the \code{game} class.
 }
 \description{
-  Fits a strategic model with two players and four terminal
-  nodes, as in the game illustrated below in "Details".
+Fits a strategic model with two players and four terminal nodes, as in the
+game illustrated below in "Details".
 }
 \details{
-  The model corresponds to the following extensive-form
-  game:
-  \preformatted{
+The model corresponds to the following extensive-form game:
+\preformatted{
 .        ___ 1 ___
 .       /         \
 .      /           \
@@ -92,28 +87,25 @@
 . u11    u12    u13    u14
 . 0      u22    0      u24}
 
-  For additional details on any of the function arguments
-  or options, see \code{\link{egame12}}.  The only
-  difference is that the right-hand side of \code{formulas}
-  must have six components (rather than four) in this case.
+For additional details on any of the function arguments or options, see
+\code{\link{egame12}}.  The only difference is that the right-hand side of
+\code{formulas} must have six components (rather than four) in this case.
 
-  Ways to specify the dependent variable in
-  \code{egame122}: \itemize{ \item Numeric vector \code{y},
-  numbered 1 through 4, corresponding to the outcomes as
-  labeled in the game tree above. \item Factor \code{y},
-  where \code{y} has four levels, corresponding in order to
-  the outcomes as labeled above. \item Indicator variables
-  \code{y1 + y2}, where \code{y1} indicates whether Player
-  1 moves left or right, and \code{y2} indicates whether
-  Player 2 moves left or right. \item Indicator variables
-  \code{y1 + y2 + y3}, where \code{y1} indicates whether
-  Player 1 moves left or right, \code{y2} indicates Player
-  2's move in case Player 1 moved left, and \code{y3}
-  indicates Player 2's move in case Player 1 moved right.
-  Non-observed values of \code{y2} and \code{y3} should be
-  set to \code{0}, \strong{not} \code{NA}, to ensure that
-  observations are not dropped when \code{na.action =
-  na.omit}.}
+Ways to specify the dependent variable in \code{egame122}:
+\itemize{
+\item Numeric vector \code{y}, numbered 1 through 4, corresponding to the
+outcomes as labeled in the game tree above.
+\item Factor \code{y}, where \code{y} has four levels, corresponding in
+order to the outcomes as labeled above.
+\item Indicator variables \code{y1 + y2}, where \code{y1} indicates whether
+Player 1 moves left or right, and \code{y2} indicates whether Player 2 moves
+left or right.
+\item Indicator variables \code{y1 + y2 + y3}, where \code{y1} indicates
+whether Player 1 moves left or right, \code{y2} indicates Player 2's move in
+case Player 1 moved left, and \code{y3} indicates Player 2's move in case
+Player 1 moved right.  Non-observed values of \code{y2} and \code{y3} should
+be set to \code{0}, \strong{not} \code{NA}, to ensure that observations are
+not dropped when \code{na.action = na.omit}.}
 }
 \examples{
 data(data_122)
@@ -136,19 +128,13 @@ fr3 <- y ~ x1 | x2 | 0 | x3 | z1 | z2
 m3 <- egame122(fr3, data = data_122, sdformula = ~ x4 + z3 - 1)
 summary(m3)
 
-m4 <- egame122(fr3, data = data_122, sdformula = ~ x4 - 1 | z3 - 1, sdByPlayer = TRUE)
-summary(m4)
-
 ## fixed utilities
 utils <- c(0.25, -0.25, 0, 0.25, 0.5, -0.5)
-m5 <- egame122(y ~ 1, data = data_122, fixedUtils = utils)
-summary(m5)
-
-m6 <- egame122(y ~ 1, data = data_122, fixedUtils = utils, sdByPlayer = TRUE)
-summary(m6)
+m4 <- egame122(y ~ 1, data = data_122, fixedUtils = utils)
+summary(m4)
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and
-  Curtis S. Signorino
+Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and Curtis
+S. Signorino
 }
 

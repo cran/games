@@ -2,7 +2,7 @@
 \alias{print.summary.game}
 \title{Print strategic model summary}
 \usage{
-  \method{print}{summary.game} (x, ...)
+\method{print}{summary.game}(x, ...)
 }
 \arguments{
   \item{x}{an object of class \code{summary.game},
@@ -12,20 +12,19 @@
   \item{...}{other arguments, currently ignored}
 }
 \value{
-  \code{x}, invisibly.
+\code{x}, invisibly.
 }
 \description{
-  Print output from \code{summary.game}
+Print output from \code{summary.game}
 }
 \details{
-  Prints the standard regression results table from a
-  fitted strategic model, along with the log-likelihood,
-  AIC, and number of observations.
+Prints the standard regression results table from a fitted strategic model,
+along with the log-likelihood, AIC, and number of observations.
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 \seealso{
-  \code{\link{summary.game}}
+\code{\link{summary.game}}
 }
 

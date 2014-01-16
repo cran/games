@@ -2,12 +2,10 @@
 \alias{ultimatum}
 \title{Statistical ultimatum game}
 \usage{
-  ultimatum(formulas, data, subset, na.action,
-    minOffer = 0, maxOffer,
-    offertol = sqrt(.Machine$double.eps), s1 = NULL,
-    s2 = NULL, outcome = c("both", "offer"), boot = 0,
-    bootreport = TRUE, profile, method = "BFGS", ...,
-    reltol = 1e-12)
+ultimatum(formulas, data, subset, na.action, minOffer = 0, maxOffer,
+  offertol = sqrt(.Machine$double.eps), s1 = NULL, s2 = NULL,
+  outcome = c("both", "offer"), boot = 0, bootreport = TRUE, profile,
+  method = "BFGS", ..., reltol = 1e-12)
 }
 \arguments{
   \item{formulas}{a list of two formulas, or a
@@ -70,22 +68,19 @@
   than the default is discouraged.}
 }
 \value{
-  An object of class \code{c("game", "ultimatum")}.  For
-  details on the \code{game} class, see
-  \code{\link{egame12}}.  The \code{ultimatum} class is
-  just for use in the generation of predicted values (see
-  \code{\link{predProbs}}) and profiling (see
-  \code{\link{profile.game}}).
+An object of class \code{c("game", "ultimatum")}.  For details on
+the \code{game} class, see \code{\link{egame12}}.  The \code{ultimatum}
+class is just for use in the generation of predicted values (see
+\code{\link{predProbs}}) and profiling (see \code{\link{profile.game}}).
 }
 \description{
-  Estimates the statistical ultimatum game described in
-  Ramsay and Signorino (2009), illustrated below in
-  "Details".
+Estimates the statistical ultimatum game described in Ramsay and Signorino
+(2009), illustrated below in "Details".
 }
 \details{
-  The model corresponds to the following extensive-form
-  game, described in Ramsay and Signorino (2009):
-  \preformatted{
+The model corresponds to the following extensive-form game, described in
+Ramsay and Signorino (2009):
+\preformatted{
 .       1
 .      / \
 .     /   \
@@ -98,37 +93,28 @@
 .    /      \
 . Q - y     R1
 . y         R2}
-  Q refers to the maximum feasible offer (the
-  argument \code{maxOffer}).
+Q refers to the maximum feasible offer (the argument \code{maxOffer}).
 
-  The two equations on the right-hand side of
-  \code{formulas} refer to Player 1's and Player 2's
-  reservation values respectively.  The left-hand side
-  should take the form \code{offer + acceptance}, where
-  \code{outcome} contains the numeric value of the offer
-  made and \code{acceptance} is an indicator for whether it
-  was accepted.  (If \code{outcome} is set to "offer", the
-  acceptance indicator can be omitted.  See below for
-  more.)
+The two equations on the right-hand side of \code{formulas} refer to Player
+1's and Player 2's reservation values respectively.  The left-hand side
+should take the form \code{offer + acceptance}, where \code{outcome}
+contains the numeric value of the offer made and \code{acceptance} is an
+indicator for whether it was accepted.  (If \code{outcome} is set to
+"offer", the acceptance indicator can be omitted.  See below for more.)
 
-  The \code{outcome} argument refers to whether the outcome
-  of interest is just the level of the offer made, or both
-  the level of the offer and whether it was accepted.  If
-  acceptance was unobserved, then \code{outcome} should be
-  set to "offer".  If so, the estimates for Player 2's
-  reservation value should be interpreted as Player 1's
-  expectations about these parameters.  It may also be
-  useful to set \code{outcome} to "offer" even if
-  acceptance data are available, for the purpose of
-  comparing the strategic model to other models of offer
-  levels (as in Ramsay and Signorino 2009).  If an
-  acceptance variable is specified but \code{outcome} is
-  set to "offer", the acceptance data will be used for
-  starting values but not in the actual fitting.
+The \code{outcome} argument refers to whether the outcome of interest is
+just the level of the offer made, or both the level of the offer and whether
+it was accepted.  If acceptance was unobserved, then \code{outcome} should
+be set to "offer".  If so, the estimates for Player 2's reservation value
+should be interpreted as Player 1's expectations about these parameters.  It
+may also be useful to set \code{outcome} to "offer" even if acceptance data
+are available, for the purpose of comparing the strategic model to other
+models of offer levels (as in Ramsay and Signorino 2009).  If an acceptance
+variable is specified but \code{outcome} is set to "offer", the acceptance
+data will be used for starting values but not in the actual fitting.
 
-  Numerical instability is not uncommon in the statistical
-  ultimatum game, especially when the scale parameters are
-  being estimated.
+Numerical instability is not uncommon in the statistical ultimatum game,
+especially when the scale parameters are being estimated.
 }
 \examples{
 data(data_ult)
@@ -151,13 +137,12 @@ m3 <- ultimatum(f1, data = data_ult, maxOffer = 15, s1 = 5, s2 = 1)
 summary(m3)
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and
-  Curtis S. Signorino
+Brenton Kenkel (\email{brenton.kenkel@gmail.com}) and Curtis
+S. Signorino
 }
 \references{
-  Kristopher W. Ramsay and Curtis S. Signorino.  2009.  "A
-  Statistical Model of the Ultimatum Game."  Available
-  online at
-  \url{http://www.rochester.edu/college/psc/signorino/research/RamsaySignorino_Ultimatum.pdf}.
+Kristopher W. Ramsay and Curtis S. Signorino.  2009.  "A
+Statistical Model of the Ultimatum Game."  Available online at
+\url{http://www.rochester.edu/college/psc/signorino/research/RamsaySignorino_Ultimatum.pdf}.
 }
 

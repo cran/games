@@ -2,7 +2,7 @@
 \alias{print.game}
 \title{Print a strategic model object}
 \usage{
-  \method{print}{game} (x, ...)
+\method{print}{game}(x, ...)
 }
 \arguments{
   \item{x}{a fitted model of class \code{game}}
@@ -10,16 +10,15 @@
   \item{...}{other arguments, currently ignored}
 }
 \value{
-  \code{x}, invisibly
+\code{x}, invisibly
 }
 \description{
-  The default method for printing a \code{game} object.
+The default method for printing a \code{game} object.
 }
 \details{
-  Prints the call and coefficients of a fitted strategic
-  model.
+Prints the call and coefficients of a fitted strategic model.
 }
 \author{
-  Brenton Kenkel (\email{brenton.kenkel@gmail.com})
+Brenton Kenkel (\email{brenton.kenkel@gmail.com})
 }
 

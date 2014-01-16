@@ -270,18 +270,6 @@ CIfromBoot <- function(x, newdata, ci = .95, type, report = TRUE)
 ##'
 ##' ## action probabilities
 ##' pp7 <- predProbs(m1, x = "regime1", type = "action")
-##' 
-##' ## predProbs (despite the name) also provides predictions for the optimal
-##' ## offer in ultimatum models
-##' data(data_ult)
-##' f2 <- offer + accept ~ x1 + x2 + x3 + x4 + w1 + w2 | z1 + z2 + z3 + z4 + w1 + w2
-##' m2 <- ultimatum(f2, data = data_ult, maxOffer = 15, boot = 10)
-##' pp8 <- predProbs(m2, x = "w1", n = 5)
-##' print(pp8)
-##'
-##' op <- par(mfrow = c(2, 1))
-##' plot(pp8)
-##' par(op)
 predProbs <- function(model, x, xlim = c(min(x), max(x)), n = 100, ci = .95,
                       type = c("outcome", "action"),
                       makePlots = FALSE, report = TRUE, ...)
